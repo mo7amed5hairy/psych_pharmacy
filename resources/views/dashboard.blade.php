@@ -59,7 +59,7 @@
     <!-- Menu Cards -->
     <h2 class="text-lg font-extrabold text-slate-900 mb-3">الشاشات الرئيسية</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <a href="{{ route('medicines.index') }}" class="card p-5 hover:shadow-lg transition block">
+        <a href="{{ route('medicines.index') }}" class="card p-5 bg-sky-50 hover:shadow-lg transition block">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-3xl">📖</span>
                 <span class="pill pill-amber">إدارة</span>
@@ -68,7 +68,7 @@
             <div class="text-sm text-slate-500 mt-1 leading-6">إضافة وتعديل الأدوية والأسعار</div>
         </a>
 
-        <a href="{{ route('units.index') }}" class="card p-5 hover:shadow-lg transition block">
+        <a href="{{ route('units.index') }}" class="card p-5 bg-sky-50 hover:shadow-lg transition block">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-3xl">🔣</span>
                 <span class="pill pill-amber">إدارة</span>
@@ -77,7 +77,7 @@
             <div class="text-sm text-slate-500 mt-1 leading-6">قرص — كبسولة — كيس — أمبول — زجاجة</div>
         </a>
 
-        <a href="{{ route('stock.index') }}" class="card p-5 hover:shadow-lg transition block">
+        <a href="{{ route('stock.index') }}" class="card p-5 bg-sky-50 hover:shadow-lg transition block">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-3xl">📦</span>
                 <span class="pill pill-blue">إدخال</span>
@@ -86,7 +86,7 @@
             <div class="text-sm text-slate-500 mt-1 leading-6">إدخال الرصيد الشهري</div>
         </a>
 
-        <a href="{{ route('invoices.create') }}" class="card p-5 hover:shadow-lg transition block">
+        <a href="{{ route('invoices.create') }}" class="card p-5 bg-sky-50 hover:shadow-lg transition block">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-3xl">🧾</span>
                 <span class="pill pill-violet">تقارير</span>
@@ -95,7 +95,7 @@
             <div class="text-sm text-slate-500 mt-1 leading-6">صرف الأدوية للمرضى</div>
         </a>
 
-        <a href="{{ route('reports.monthly') }}" class="card p-5 hover:shadow-lg transition block">
+        <a href="{{ route('reports.monthly') }}" class="card p-5 bg-sky-50 hover:shadow-lg transition block">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-3xl">📊</span>
                 <span class="pill pill-violet">تقارير</span>
@@ -104,7 +104,7 @@
             <div class="text-sm text-slate-500 mt-1 leading-6">إجمالي كل صنف يومياً — للشطب</div>
         </a>
 
-        <a href="{{ route('reports.inventory') }}" class="card p-5 hover:shadow-lg transition block">
+        <a href="{{ route('reports.inventory') }}" class="card p-5 bg-sky-50 hover:shadow-lg transition block">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-3xl">🗂️</span>
                 <span class="pill pill-violet">تقارير</span>

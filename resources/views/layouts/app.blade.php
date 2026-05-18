@@ -177,6 +177,15 @@
             color: #fff !important;
         }
 
+
+        .logo-section {
+            background: aliceblue;
+            padding: .5rem;
+            border: 1px solid #ccc;
+            border-radius: .5rem;
+        }
+
+
         .sidebar {
             width: 260px;
             flex-shrink: 0;
@@ -210,7 +219,46 @@
             box-shadow: 0 6px 16px -6px rgba(2, 132, 199, .5);
         }
 
+        .sidebar-group-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .65rem .85rem;
+            border-radius: .6rem;
+            color: #334155;
+            font-weight: 600;
+            font-size: .9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar-group-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .sidebar-dropdown {
+            display: none;
+            padding-right: 1.25rem;
+            margin-top: 0.25rem;
+            border-right: 2px solid #f1f5f9;
+            margin-right: 0.75rem;
+        }
+
+        .sidebar-dropdown.show {
+            display: block;
+        }
+
+        .sidebar-group-btn .chevron {
+            transition: transform 0.2s;
+            font-size: 0.7rem;
+        }
+
+        .sidebar-group-btn.open .chevron {
+            transform: rotate(-90deg);
+        }
+
         .topbar {
+
             background: white;
             border-bottom: 1px solid #e2e8f0;
             padding: .9rem 1.5rem;
@@ -391,8 +439,8 @@
     @auth
         <div class="flex min-h-screen">
             <!-- Sidebar -->
-            <aside class="sidebar" id="sidebar">
-                <div class="flex items-center gap-3 mb-6 px-2">
+            <aside class="sidebar bg-sky-50" id="sidebar">
+                <div class="logo-section flex items-center gap-3 mb-6 px-2">
                     <div
                         class="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center text-white text-xl">
                         <img src="{{ asset('images/ain-shams-logo.jpg') }}" alt="Logo">
@@ -431,10 +479,25 @@
                         class="{{ request()->routeIs('dispensed-medicines.*') ? 'active' : '' }}" onclick="showLoader()">
                         <i class="fas fa-pills"></i><span>الأدوية المنصرفة</span>
                     </a>
-                    <a href="{{ route('invoices.create') }}"
-                        class="{{ request()->routeIs('invoices.create') ? 'active' : '' }}" onclick="showLoader()">
-                        <i class="fas fa-file-invoice-dollar"></i><span>فاتورة الصرف</span>
-                    </a>
+
+                    <div class="sidebar-group-btn {{ request()->routeIs('invoices.*') ? 'open' : '' }}"
+                        onclick="toggleSidebarDropdown('invoices-menu')">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-file-invoice-dollar"></i><span>الفواتير</span>
+                        </div>
+                        <i class="fas fa-chevron-left chevron"></i>
+                    </div>
+                    <div id="invoices-menu" class="sidebar-dropdown {{ request()->routeIs('invoices.*') ? 'show' : '' }}">
+                        <a href="{{ route('invoices.create') }}"
+                            class="{{ request()->routeIs('invoices.create') ? 'active' : '' }}" onclick="showLoader()">
+                            <i class="fas fa-plus-circle"></i><span>إضافة فاتورة صرف</span>
+                        </a>
+                        <a href="{{ route('invoices.index') }}"
+                            class="{{ request()->routeIs('invoices.index') ? 'active' : '' }}" onclick="showLoader()">
+                            <i class="fas fa-list-ul"></i><span>قائمة الفواتير</span>
+                        </a>
+                    </div>
+
                     <a href="{{ route('reports.monthly') }}"
                         class="{{ request()->routeIs('reports.monthly') ? 'active' : '' }}" onclick="showLoader()">
                         <i class="fas fa-chart-bar"></i><span>كشف المنصرف</span>
@@ -443,6 +506,7 @@
                         class="{{ request()->routeIs('reports.inventory') ? 'active' : '' }}" onclick="showLoader()">
                         <i class="fas fa-clipboard-list"></i><span>الجرد</span>
                     </a>
+
                     <a href="{{ route('logout') }}"
                         onclick="event.preventDefault(); showLoader(); document.getElementById('logout-form').submit();">
                         <i class="fas fa-sign-out-alt"></i><span>تسجيل الخروج</span>
@@ -717,7 +781,25 @@
             });
 
         }
+
+        // Sidebar Dropdown Toggle
+        function toggleSidebarDropdown(id) {
+            const el = document.getElementById(id);
+            const btn = el.previousElementSibling;
+
+            // Close other dropdowns (optional, but cleaner)
+            document.querySelectorAll('.sidebar-dropdown').forEach(dropdown => {
+                if (dropdown.id !== id) {
+                    dropdown.classList.remove('show');
+                    dropdown.previousElementSibling.classList.remove('open');
+                }
+            });
+
+            el.classList.toggle('show');
+            btn.classList.toggle('open');
+        }
     </script>
+
 
     @stack('scripts')
 </body>

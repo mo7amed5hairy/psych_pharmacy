@@ -5,102 +5,133 @@
 @section('page-subtitle', 'رقم الفاتورة: ' . $invoice->id)
 
 @section('content')
-<div class="card p-6">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-slate-200">
+    <div class="mb-5 flex justify-between items-center no-print">
         <div>
-            <h2 class="text-2xl font-extrabold text-slate-900">🧾 فاتورة صرف أدوية</h2>
-            <p class="text-slate-500 text-sm mt-1">قسم الحسابات - مرسل الى حقوق مكافحة وعلاج الإدمان</p>
+            <a href="{{ route('invoices.index') }}" class="btn btn-ghost">
+                <i class="fas fa-arrow-right"></i> العودة للقائمة
+            </a>
         </div>
-        <div class="text-left">
-            <div class="text-lg font-bold text-slate-900">#{{ $invoice->id }}</div>
-            <div class="text-sm text-slate-500">{{ $invoice->created_at->format('Y-m-d H:i') }}</div>
+        <div class="flex gap-2">
+            <a href="{{ route('invoices.print', $invoice) }}" target="_blank" class="btn btn-primary">
+                <i class="fas fa-print"></i> فتح للطباعة
+            </a>
+            <a href="{{ route('invoices.create') }}" class="btn btn-success">
+                <i class="fas fa-plus"></i> فاتورة جديدة
+            </a>
         </div>
     </div>
 
-    <!-- Info -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-slate-50 p-4 rounded-xl">
-        <div>
-            <span class="text-sm text-slate-500 block">اسم المريض</span>
-            <span class="font-semibold text-slate-900">{{ $invoice->patient_name }}</span>
+    <div class="invoice-premium-wrapper page shadow-lg rounded-xl overflow-hidden mx-auto"
+        style="width: 720px; background: #f5f5f0; padding: 30px 35px 40px;">
+        <!-- HEADER -->
+        <div class="header"
+            style="display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 10px;">
+            <div class="logo-area" style="display: flex; flex-direction: column; align-items: flex-start; gap: 3px;">
+                <img src="{{ asset('images/ain-shams-logo.jpg') }}" alt="logo"
+                    style="width: 70px; height: 70px; object-fit: contain;">
+                <div class="clinic-name" style="font-size: 13px; font-weight: 700; color: #222;">قسم الحسابات</div>
+                <div class="clinic-sub" style="font-size: 10px; color: #444;">مرسل الى حقوق مكافحة وعلاج الإدمان</div>
+            </div>
         </div>
-        <div>
-            <span class="text-sm text-slate-500 block">رقم التحويل</span>
-            <span class="font-semibold text-slate-900">{{ $invoice->referral_number }}</span>
-        </div>
-        <div>
-            <span class="text-sm text-slate-500 block">تم الصرف بواسطة</span>
-            <span class="font-semibold text-slate-900">{{ $invoice->user->name }} ({{ $invoice->user->employee_code }})</span>
-        </div>
-    </div>
 
-    <!-- Items Table -->
-    <div class="table-wrap mb-6">
-        <table class="data">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>الدواء</th>
-                    <th>الوحدة</th>
-                    <th>الكمية</th>
-                    <th>سعر الوحدة</th>
-                    <th>الإجمالي</th>
+        <!-- TITLE -->
+        <div class="invoice-title"
+            style="text-align: center; font-size: 16px; font-weight: 700; margin: 8px 0 4px; color: #111;">
+            فاتورة رقم {{ $invoice->referral_number }}
+        </div>
+
+        <div class="designer" style="font-size: 9px; color: #888; margin-bottom: 8px; direction: ltr; text-align: left;">
+            Designed by Eng Mohamed Khairy
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-wrapper" style="border: 2.5px solid #000; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; color: #111;">
+                <tr class="date-row">
+                    <td
+                        style="border: 1.5px solid #000; padding: 6px 10px; background: #e8e8e8; font-weight: 600; width: 34%;">
+                        الاسم</td>
+                    <td colspan="2" style="border: 1.5px solid #000; padding: 6px 10px;">{{ $invoice->patient_name }}</td>
+                    <td style="border: 1.5px solid #000; padding: 6px 10px; background: #e8e8e8; font-weight: 600;">تاريخ
+                        الصرف</td>
+                    <td style="border: 1.5px solid #000; padding: 6px 10px;">{{ $invoice->created_at->format('Y-m-d') }}
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach($invoice->items as $index => $item)
-                <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td class="font-semibold">{{ $item->medicine->name }}</td>
-                    <td>{{ $item->medicine->unitType->name }}</td>
-                    <td>{{ $item->quantity }}</td>
-                    <td>{{ number_format($item->price_at_dispense, 2) }} ج</td>
-                    <td class="font-bold">{{ number_format($item->subtotal, 2) }} ج</td>
+
+                <tr class="col-headers" style="background: #e0e0d8; font-weight: 700;">
+                    <th colspan="2"
+                        style="border: 1.5px solid #000; padding: 6px 10px; font-size: 12px; text-align: right;">الصنف</th>
+                    <th style="border: 1.5px solid #000; padding: 6px 10px; font-size: 12px;">سعر القرص</th>
+                    <th style="border: 1.5px solid #000; padding: 6px 10px; font-size: 12px;">المصرف</th>
+                    <th style="border: 1.5px solid #000; padding: 6px 10px; font-size: 12px;">القيمة</th>
                 </tr>
+
+                @foreach($invoice->items as $item)
+                    <tr class="data-row" style="background: #fafaf8;">
+                        <td colspan="2" style="border: 1.5px solid #000; padding: 6px 10px;">{{ $item->medicine->name }}</td>
+                        <td colspan="1" style="border: 1.5px solid #000; padding: 6px 10px; text-align: center;">ج.م
+                            {{ number_format($item->price_at_dispense, 3) }}</td>
+                        <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: center;">{{ $item->quantity }}</td>
+                        <td style="border: 1.5px solid #000; padding: 6px 10px; font-weight: bold; text-align: center;">
+                            {{ number_format($item->subtotal, 2) }}</td>
+                    </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
 
-    <!-- Total -->
-    <div class="flex justify-between items-center pt-4 border-t border-slate-200">
-        <div class="text-sm text-slate-500">
-            عدد الأصناف: {{ $invoice->items->count() }}
+                <tr class="total-row" style="background: #e8e8e0; font-weight: 700; font-size: 13px;">
+                    <td colspan="2" class="total-label"
+                        style="border: 1.5px solid #000; border-left: 0; padding: 6px 10px; text-align: right; padding-right: 20px;">
+                        الإجمالي</td>
+                    <td colspan="2"
+                        style="border: 1.5px solid #000; border-right: 0; padding: 6px 10px; text-align: center;">ج.م</td>
+                    <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: center;">
+                        {{ number_format($invoice->total, 2) }}</td>
+                </tr>
+            </table>
         </div>
-        <div class="text-2xl font-extrabold text-emerald-600">
-            الإجمالي: {{ number_format($invoice->total, 2) }} ج
-        </div>
-    </div>
 
-    <!-- Actions -->
-    <div class="flex gap-2 mt-6">
-        <button onclick="printInvoice()" class="btn btn-primary">
-            <i class="fas fa-print"></i> طباعة
-        </button>
-        <a href="{{ route('invoices.create') }}" class="btn btn-success">
-            <i class="fas fa-plus"></i> فاتورة جديدة
-        </a>
-        <a href="{{ route('dashboard') }}" class="btn btn-ghost">
-            <i class="fas fa-arrow-right"></i> العودة
-        </a>
+        <!-- FOOTER -->
+        <div class="footer"
+            style="display: flex; justify-content: space-between; margin-top: 30px; font-size: 12px; font-weight: 600; color: #222; padding: 0 10px;">
+            <span style="text-align: center;">قسم الحسابات</span>
+            <span style="text-align: center;">مدير الشئون المالية والإدارية</span>
+            <span style="text-align: center;">مدير الصيدلية</span>
+        </div>
     </div>
-</div>
 @endsection
 
-@push('scripts')
-<script>
-function printInvoice() {
-    window.print();
-}
-</script>
-@endpush
-
 @push('styles')
-<style>
-@media print {
-    .sidebar, .topbar, .btn, form { display: none !important; }
-    .card { box-shadow: none; border: 1px solid #e2e8f0; }
-    body { background: white; }
-}
-</style>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+        .invoice-premium-wrapper * {
+            font-family: 'Cairo', Arial, sans-serif;
+        }
+
+        @media print {
+
+            .sidebar,
+            .topbar,
+            .no-print,
+            .btn {
+                display: none !important;
+            }
+
+            .main-content {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+
+            .invoice-premium-wrapper {
+                box-shadow: none !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 20px !important;
+            }
+        }
+    </style>
 @endpush
