@@ -27,6 +27,8 @@ class StockController extends Controller
             ->where('stock_date', 'like', $date->format('Y-m') . '%')
             ->get();
 
+
+
         return view('stock.index', compact('stock', 'month', 'year', 'stockDate'));
     }
 

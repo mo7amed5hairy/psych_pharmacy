@@ -10,9 +10,11 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::orderBy('name')->paginate(20);
+        $users = User::orderBy('name')->get();
         return view('users.index', compact('users'));
     }
+
+
 
     public function create()
     {

@@ -9,9 +9,10 @@ class UnitTypeController extends Controller
 {
     public function index()
     {
-        $unitTypes = UnitType::all();
+        $unitTypes = UnitType::orderBy('name')->get();
         return view('units.index', compact('unitTypes'));
     }
+
 
     public function store(Request $request)
     {

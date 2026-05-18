@@ -9,6 +9,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
     <style>
         * {
             font-family: 'Cairo', sans-serif;
@@ -144,6 +147,7 @@
             overflow: auto;
             border-radius: .75rem;
             border: 1px solid #e2e8f0;
+            padding: 1rem;
         }
 
         table.data {
@@ -179,7 +183,7 @@
 
 
         .logo-section {
-            background: aliceblue;
+            background: #fff;
             padding: .5rem;
             border: 1px solid #ccc;
             border-radius: .5rem;
@@ -422,6 +426,24 @@
 
         .smart-search-item:last-child {
             border-bottom: none;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #0ea5e9 !important;
+            color: white !important;
+            border: 1px solid #0ea5e9 !important;
+            border-radius: 0.5rem !important;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 0.5rem !important;
+            padding: 0.4rem 0.75rem !important;
+            margin-right: 0.5rem !important;
+        }
+
+        .dataTables_length select {
+            padding: 0px !important;
         }
     </style>
     @stack('styles')
@@ -798,6 +820,22 @@
             el.classList.toggle('show');
             btn.classList.toggle('open');
         }
+    </script>
+
+    <!-- jQuery and DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+
+    <script>
+        // Global DataTable defaults for Arabic language
+        $.extend(true, $.fn.dataTable.defaults, {
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ar.json'
+            },
+            responsive: true,
+            pageLength: 10
+        });
     </script>
 
 

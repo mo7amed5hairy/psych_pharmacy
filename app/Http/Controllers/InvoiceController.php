@@ -16,10 +16,12 @@ class InvoiceController extends Controller
         $invoices = Invoice::with(['items.medicine'])
             ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->get();
 
         return view('invoices.index', compact('invoices'));
     }
+
+
 
     public function create()
     {

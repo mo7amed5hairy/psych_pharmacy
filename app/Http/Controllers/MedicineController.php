@@ -8,14 +8,14 @@ use Illuminate\Http\Request;
 
 class MedicineController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $medicines = Medicine::with('unitType')
-            ->when($request->search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%");
-            })
             ->orderBy('name')
             ->get();
+
+
+
 
         $unitTypes = UnitType::all();
 

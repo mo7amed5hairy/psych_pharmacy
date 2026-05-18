@@ -6,8 +6,12 @@
 
 @section('content')
     <div class="card p-5">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h3 class="font-extrabold text-slate-900">قائمة الفواتير</h3>
+        </div>
+
         <div class="table-wrap mb-4">
-            <table class="data">
+            <table class="data data-table">
                 <thead>
                     <tr>
                         <th>رقم الفاتورة</th>
@@ -19,7 +23,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($invoices as $invoice)
+                    @foreach($invoices as $invoice)
                         <tr>
                             <td class="font-bold text-slate-700">#{{ $invoice->id }}</td>
                             <td><span class="pill pill-blue">{{ $invoice->referral_number }}</span></td>
@@ -38,20 +42,19 @@
                                 </div>
                             </td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="p-8 text-center text-slate-400">
-                                <i class="fas fa-file-invoice text-3xl mb-2 opacity-20"></i>
-                                <div>لا توجد فواتير مسجلة حالياً</div>
-                            </td>
-                        </tr>
-                    @endforelse
+                    @endforeach
                 </tbody>
             </table>
         </div>
 
-        <div class="mt-4">
-            {{ $invoices->links() }}
-        </div>
+        <!-- DataTable will handle pagination -->
     </div>
+
+    @push('scripts')
+        <script>
+            $(document).ready(function () {
+                $('.data-table').DataTable();
+            });
+        </script>
+    @endpush
 @endsection

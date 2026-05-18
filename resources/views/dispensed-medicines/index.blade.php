@@ -25,7 +25,8 @@
 
                     <div class="col-span-2">
                         <label class="label">الرقم (يدوي)</label>
-                        <input type="text" name="medicines[0][referral_number]" class="input referral-input" placeholder="TR-1046">
+                        <input type="text" name="medicines[0][referral_number]" class="input referral-input"
+                            placeholder="TR-1046">
                     </div>
 
                     <div class="col-span-2">
@@ -72,8 +73,7 @@
         </h3>
 
         <div class="table-wrap">
-
-            <table class="data">
+            <table class="data data-table">
 
                 <thead>
                     <tr>
@@ -89,44 +89,33 @@
 
                 <tbody>
 
-                    @forelse($dispensedMedicines as $dispensed)
-
+                    @foreach($dispensedMedicines as $dispensed)
                         <tr>
-
                             <td>
                                 {{ $dispensed->dispense_date->format('Y-m-d') }}
                             </td>
-
                             <td>
                                 {{ $dispensed->referral_number ?? '-' }}
                             </td>
-
                             <td class="font-semibold">
                                 {{ $dispensed->medicine->name }}
                             </td>
-
                             <td>
                                 {{ $dispensed->medicine->unitType->name }}
                             </td>
-
                             <td>
                                 {{ $dispensed->quantity }}
                             </td>
-
                             <td>
-
                                 <form method="POST" action="{{ route('dispensed-medicines.destroy', $dispensed) }}"
                                     class="inline"
                                     onsubmit="event.preventDefault(); if(confirm('هل أنت متأكد من حذف هذا السجل؟')) { showLoader(); this.submit(); }">
                                     @csrf
                                     @method('DELETE')
-
                                     <button type="submit" class="btn btn-danger px-2 py-1 text-xs">
                                         <i class="fas fa-trash"></i>
                                     </button>
-
                                 </form>
-
                             </td>
                             <td>
                                 <button type="button" class="btn btn-warning px-2 py-1 text-xs" onclick="editDispensed(this)"
@@ -138,18 +127,8 @@
                                     <i class="fas fa-edit"></i>
                                 </button>
                             </td>
-
                         </tr>
-
-                    @empty
-
-                        <tr>
-                            <td colspan="6" class="text-center py-8 text-slate-500">
-                                لا توجد أدوية منصرفة
-                            </td>
-                        </tr>
-
-                    @endforelse
+                    @endforeach
 
                 </tbody>
 
@@ -261,7 +240,7 @@
                     document.getElementById('dispensedItemsContainer').innerHTML = '';
                     dispensedRowCount = 0;
                     addDispensedRow();
-                    
+
 
                     setTimeout(() => location.reload(), 2000);
                 })
@@ -281,7 +260,7 @@
 
             toast.className =
                 `fixed top-5 right-5 px-4 py-3 rounded shadow-lg text-white z-50
-                    ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+                        ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
 
             toast.innerText = message;
 
@@ -328,11 +307,11 @@
                                     div.className = 'smart-search-item';
 
                                     div.innerHTML = `
-                                            <div class="font-semibold">${med.name}</div>
-                                            <div class="text-xs text-slate-500">
-                                                ${med.unit_type?.name || ''} - سعر: ${med.price_hotline}
-                                            </div>
-                                        `;
+                                                <div class="font-semibold">${med.name}</div>
+                                                <div class="text-xs text-slate-500">
+                                                    ${med.unit_type?.name || ''} - سعر: ${med.price_hotline}
+                                                </div>
+                                            `;
 
                                     div.onclick = () => selectMedicine(
                                         med,
@@ -400,68 +379,68 @@
 
 
         // ================= ADD ROW =================
-function setupReferralValidation(input) {
-    let checkTimeout;
-    input.addEventListener('blur', function () {
-        clearTimeout(checkTimeout);
-        const val = this.value.trim();
-        if (!val) return;
-        checkTimeout = setTimeout(() => {
-            fetch('{{ url('/check-referral-number') }}?number=' + encodeURIComponent(val))
-                .then(r => r.json())
-                .then(d => {
-                    if (d.exists) {
-                        const msg = d.next_available
-                            ? `⚠ الرقم "${val}" مستخدم من قبل — الرقم التالي المتاح: ${d.next_available}`
-                            : `⚠ الرقم "${val}" مستخدم من قبل`;
-                        showToast(msg, 'error');
-                        input.dataset.duplicate = 'true';
-                    } else {
-                        input.dataset.duplicate = '';
-                    }
-                });
-        }, 400);
-    });
-}
+        function setupReferralValidation(input) {
+            let checkTimeout;
+            input.addEventListener('blur', function () {
+                clearTimeout(checkTimeout);
+                const val = this.value.trim();
+                if (!val) return;
+                checkTimeout = setTimeout(() => {
+                    fetch('{{ url('/check-referral-number') }}?number=' + encodeURIComponent(val))
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.exists) {
+                                const msg = d.next_available
+                                    ? `⚠ الرقم "${val}" مستخدم من قبل — الرقم التالي المتاح: ${d.next_available}`
+                                    : `⚠ الرقم "${val}" مستخدم من قبل`;
+                                showToast(msg, 'error');
+                                input.dataset.duplicate = 'true';
+                            } else {
+                                input.dataset.duplicate = '';
+                            }
+                        });
+                }, 400);
+            });
+        }
 
-function addDispensedRow() {
+        function addDispensedRow() {
 
-    const index = dispensedRowCount++;
+            const index = dispensedRowCount++;
 
-    const container = document.getElementById('dispensedItemsContainer');
+            const container = document.getElementById('dispensedItemsContainer');
 
-    const row = document.createElement('div');
+            const row = document.createElement('div');
 
-    row.className = 'grid grid-cols-1 md:grid-cols-12 gap-4 mb-2 dispensed-row';
+            row.className = 'grid grid-cols-1 md:grid-cols-12 gap-4 mb-2 dispensed-row';
 
-    row.innerHTML = `
+            row.innerHTML = `
 
-                    <div class="col-span-2">
-                        <input type="text" name="medicines[${index}][referral_number]" class="input referral-input">
-                    </div>
-
-                    <div class="col-span-2">
-                        <input type="date" name="medicines[${index}][dispense_date]" class="input" value="{{ date('Y-m-d') }}" required>
-                    </div>
-
-                    <div class="col-span-5">
-                        <div class="relative">
-                            <input type="text" class="input medicine-search" placeholder="🔎 ابحث عن الدواء..." autocomplete="off">
-                            <input type="hidden" name="medicines[${index}][medicine_id]" class="medicine-id">
-                            <div class="smart-search-results"></div>
+                        <div class="col-span-2">
+                            <input type="text" name="medicines[${index}][referral_number]" class="input referral-input">
                         </div>
-                    </div>
 
-                    <div class="col-span-2">
-                        <input type="number" name="medicines[${index}][quantity]" class="input" min="1" required>
-                    </div>
+                        <div class="col-span-2">
+                            <input type="date" name="medicines[${index}][dispense_date]" class="input" value="{{ date('Y-m-d') }}" required>
+                        </div>
 
-                    <div class="col-span-1">
-                        <button type="button" onclick="removeDispensedRow(this)" class="btn btn-danger mt-2">
-                            حذف
-                        </button>
-                    </div>
-                `;
+                        <div class="col-span-5">
+                            <div class="relative">
+                                <input type="text" class="input medicine-search" placeholder="🔎 ابحث عن الدواء..." autocomplete="off">
+                                <input type="hidden" name="medicines[${index}][medicine_id]" class="medicine-id">
+                                <div class="smart-search-results"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-span-2">
+                            <input type="number" name="medicines[${index}][quantity]" class="input" min="1" required>
+                        </div>
+
+                        <div class="col-span-1">
+                            <button type="button" onclick="removeDispensedRow(this)" class="btn btn-danger mt-2">
+                                حذف
+                            </button>
+                        </div>
+                    `;
 
             container.appendChild(row);
 
@@ -511,6 +490,12 @@ function addDispensedRow() {
                     .forEach(r => r.classList.remove('active'));
             }
         });
+
+        $(document).ready(function () {
+            $('.data-table').DataTable();
+        });
+
+    </script>
 
     </script>
 @endpush

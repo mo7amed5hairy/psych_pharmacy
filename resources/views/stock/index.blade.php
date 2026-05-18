@@ -20,7 +20,7 @@
             11 => 'نوفمبر',
             12 => 'ديسمبر'
         ];
-        $monthName = $arabicMonths[$month] ?? $month;
+        $monthName = isset($month) ? ($arabicMonths[(int) $month] ?? $month) : '';
     @endphp
 
     <!-- View Filter -->
@@ -28,19 +28,16 @@
         <form method="GET" action="{{ route('stock.index') }}" class="flex items-end gap-3 flex-wrap">
             <div>
                 <label class="label text-sky-800">عرض أرصدة شهر</label>
-                <div class="flex gap-2">
-                    <select name="stock_date" class="input min-w-[150px]" onchange="this.form.submit()">
-                        @for($i = -6; $i <= 6; $i++)
-                            @php $d = now()->addMonths($i)->startOfMonth(); @endphp
-                            <option value="{{ $d->format('Y-m-d') }}" {{ $stockDate == $d->format('Y-m-d') ? 'selected' : '' }}>
-                                {{ $arabicMonths[$d->month] }} {{ $d->year }}
-                            </option>
-                        @endfor
-                    </select>
-                    <button type="submit" class="btn btn-primary">عرض</button>
-                </div>
+                <select name="stock_date" class="input min-w-[150px]" onchange="this.form.submit()">
+                    @for($i = -6; $i <= 6; $i++)
+                        @php $d = now()->addMonths($i)->startOfMonth(); @endphp
+                        <option value="{{ $d->format('Y-m-d') }}" {{ $stockDate == $d->format('Y-m-d') ? 'selected' : '' }}>
+                            {{ $arabicMonths[$d->month] }} {{ $d->year }}
+                        </option>
+                    @endfor
+                </select>
             </div>
-            <div class="text-sm text-slate-500 mb-2 mr-auto italic">
+            <div class="text-sm text-slate-500 mb-2 mr-auto italic hidden lg:block">
                 <i class="fas fa-info-circle"></i> يمكنك التنقل بين الشهور لعرض العهدة السابقة أو المستقبلية.
             </div>
         </form>
@@ -81,7 +78,7 @@
     <div class="card p-5">
         <h3 class="font-extrabold text-slate-900 mb-3">أرصدة شهر {{ $monthName }} {{ $year }}</h3>
         <div class="table-wrap">
-            <table class="data">
+            <table class="data data-table">
                 <thead>
                     <tr>
                         <th>الدواء</th>
@@ -93,7 +90,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($stock as $item)
+                    @foreach($stock as $item)
                         @php
                             $dispensed = App\Models\DispensedMedicine::where('user_id', auth()->id())
                                 ->where('medicine_id', $item->medicine_id)
@@ -117,17 +114,15 @@
                                 </button>
                             </td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-8 text-slate-500">
-                                لا توجد أرصدة مسجلة لهذا الشهر
-                            </td>
-                        </tr>
-                    @endforelse
+                    @endforeach
+
                 </tbody>
             </table>
         </div>
+
+        <!-- DataTable will handle inner pagination -->
     </div>
+
 
     <!-- Edit Stock Modal -->
     <div id="editStockModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
@@ -171,18 +166,18 @@
                         medicineResults.innerHTML = '';
                         if (data.length === 0) {
                             medicineResults.innerHTML = `
-                                    <div class="smart-search-item text-slate-500">
-                                        <i class="fas fa-plus-circle ml-1"></i> "${query}" - اضغط Enter لإضافة دواء جديد
-                                    </div>
-                                `;
+                                                        <div class="smart-search-item text-slate-500">
+                                                            <i class="fas fa-plus-circle ml-1"></i> "${query}" - اضغط Enter لإضافة دواء جديد
+                                                        </div>
+                                                    `;
                         } else {
                             data.forEach(med => {
                                 const div = document.createElement('div');
                                 div.className = 'smart-search-item';
                                 div.innerHTML = `
-                                        <div class="font-semibold">${med.name}</div>
-                                        <div class="text-xs text-slate-500">${med.unit_type?.name || ''} - سعر: ${med.price_hotline}</div>
-                                    `;
+                                                            <div class="font-semibold">${med.name}</div>
+                                                            <div class="text-xs text-slate-500">${med.unit_type?.name || ''} - سعر: ${med.price_hotline}</div>
+                                                        `;
                                 div.onclick = () => selectMedicine(med);
                                 medicineResults.appendChild(div);
                             });
@@ -224,5 +219,8 @@
             document.getElementById('editStockModal').classList.add('hidden');
             document.getElementById('editStockModal').classList.remove('flex');
         }
+        $(document).ready(function () {
+            $('.data-table').DataTable();
+        });
     </script>
 @endpush
