@@ -23,8 +23,12 @@ class AuthController extends Controller
 
         $user = User::where('employee_code', $request->employee_code)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password_hash)) {
-            return back()->withErrors(['employee_code' => 'كود الموظف أو كلمة المرور غير صحيحة']);
+        if (!$user) {
+            return back()->withErrors(['employee_code' => 'كود الموظف غير مسجل بالنظام'])->withInput();
+        }
+
+        if (!Hash::check($request->password, $user->password_hash)) {
+            return back()->withErrors(['password' => 'كلمة المرور غير صحيحة'])->withInput();
         }
 
         Auth::login($user, $request->boolean('remember'));
