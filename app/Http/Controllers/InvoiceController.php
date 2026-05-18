@@ -46,7 +46,12 @@ class InvoiceController extends Controller
             $maxInv = (int) \App\Models\Invoice::where('user_id', Auth::id())->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) as m')->value('m');
             $maxDM = (int) \App\Models\DispensedMedicine::where('user_id', Auth::id())->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) as m')->value('m');
             $next = max($maxInv, $maxDM) + 1;
-            return back()->withErrors(['referral_number' => "الرقم \"{$ref}\" مستخدم من قبل — الرقم التالي المتاح: {$next}"])->withInput();
+
+            $msg = "الرقم \"{$ref}\" مستخدم من قبل — الرقم التالي المتاح: {$next}";
+            if ($request->expectsJson()) {
+                return response()->json(['errors' => ['referral_number' => [$msg]]], 422);
+            }
+            return back()->withErrors(['referral_number' => $msg])->withInput();
         }
 
         DB::beginTransaction();
@@ -69,7 +74,7 @@ class InvoiceController extends Controller
                     ->first();
 
                 if (!$stock || $stock->quantity < $item['quantity']) {
-                    throw new \Exception("الكمية غير كافية من {$medicine->name}");
+                    throw new \Exception("الكمية غير كافية من {$medicine->name} (الرصيد المتاح: " . ($stock ? $stock->quantity : 0) . ")");
                 }
 
                 InvoiceItem::create([
@@ -82,14 +87,20 @@ class InvoiceController extends Controller
                 $stock->decrement('quantity', $item['quantity']);
             }
 
-
             DB::commit();
 
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'تم إنشاء الفاتورة بنجاح', 'redirect' => route('invoices.show', $invoice)]);
+            }
             return redirect()->route('invoices.show', $invoice)->with('success', 'تم إنشاء الفاتورة بنجاح');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'حدث خطأ أثناء إنشاء الفاتورة']);
+            if ($request->expectsJson()) {
+                return response()->json(['errors' => ['error' => [$e->getMessage()]]], 422);
+            }
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
+
     }
 
     public function show(Invoice $invoice)
