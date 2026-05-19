@@ -192,7 +192,6 @@
         .sidebar {
             width: 260px;
             flex-shrink: 0;
-            background: white;
             border-left: 1px solid #e2e8f0;
             min-height: 100vh;
             padding: 1.25rem;
@@ -460,7 +459,7 @@
     @auth
         <div class="flex min-h-screen">
             <!-- Sidebar -->
-            <aside class="sidebar bg-slate-50 border-emerald-500/10" id="sidebar">
+            <aside class="sidebar sky-blue bg-slate-50 border-emerald-500/10" id="sidebar">
                 <div class="logo-section flex items-center gap-3 mb-6 px-2">
                     <div
                         class="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center text-white text-xl">
