@@ -116,34 +116,34 @@
             const user = '{{ auth()->user()->name }} ({{ auth()->user()->employee_code }})';
 
             printWindow.document.write(`
-                                <!DOCTYPE html>
-                                <html dir="rtl">
-                                <head>
-                                    <meta charset="utf-8">
-                                    <title>كشف المنصرف الشهري</title>
-                                    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-                                    <style>
-                                        * { font-family: 'Cairo', sans-serif; }
-                                        body { padding: 20px; }
-                                        h1 { text-align: center; margin-bottom: 10px; margin-top:0;}
-                                        .info { text-align: center; margin-bottom: 20px; color: #666; }
-                                        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-                                        th, td { border: 1px solid #ddd; padding: 4px; text-align: center; }
-                                        th { background: #f1f5f9; font-weight: 600; }
-                                        .total { font-weight: bold; background: #dbeafe; }
-                                    </style>
-                                </head>
-                                <body>
-                                    <h1>كشف المنصرف الشهري</h1>
-                                    <div class="info">${monthYear} - الموظف: ${user}</div>
-                                    ${document.getElementById('monthlyTable').outerHTML}
-                                    <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #999;">
-                                        تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
-                                    </div>
-                                    <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
-                                </body>
-                                </html>
-                            `);
+                                    <!DOCTYPE html>
+                                    <html dir="rtl">
+                                    <head>
+                                        <meta charset="utf-8">
+                                        <title>كشف المنصرف الشهري</title>
+                                        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+                                        <style>
+                                            * { font-family: 'Cairo', sans-serif; }
+                                            body { padding: 20px; }
+                                            h1 { text-align: center; margin-bottom: 10px; margin-top:0;}
+                                            .info { text-align: center; margin-bottom: 20px; color: #666; }
+                                            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                                            th, td { border: 1px solid #ddd; padding: 4px; text-align: center; }
+                                            th { background: #f1f5f9; font-weight: 600; }
+                                            .total { font-weight: bold; background: #dbeafe; }
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <h1>كشف المنصرف الشهري</h1>
+                                        <div class="info">${monthYear} - الموظف: ${user}</div>
+                                        ${document.getElementById('monthlyTable').outerHTML}
+                                        <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #999;">
+                                            تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
+                                        </div>
+                                        <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
+                                    </body>
+                                    </html>
+                                `);
             printWindow.document.close();
         }
 
@@ -194,10 +194,5 @@
             document.body.removeChild(downloadLink);
             URL.revokeObjectURL(url);
         }
-        $(document).ready(function () {
-            $('.data-table').DataTable({
-                pageLength: 50 // Higher default for reports
-            });
-        });
     </script>
 @endpush

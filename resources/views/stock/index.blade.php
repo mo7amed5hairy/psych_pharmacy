@@ -24,7 +24,7 @@
     @endphp
 
     <!-- View Filter -->
-    <div class="card p-5 mb-5 bg-sky-50 border-sky-100">
+    <div class="card p-5 mb-5 bg-sky-50 border-sky-100 sky-blue">
         <form method="GET" action="{{ route('stock.index') }}" class="flex items-end gap-3 flex-wrap">
             <div>
                 <label class="label text-sky-800">عرض أرصدة شهر</label>
@@ -166,18 +166,18 @@
                         medicineResults.innerHTML = '';
                         if (data.length === 0) {
                             medicineResults.innerHTML = `
-                                                        <div class="smart-search-item text-slate-500">
-                                                            <i class="fas fa-plus-circle ml-1"></i> "${query}" - اضغط Enter لإضافة دواء جديد
-                                                        </div>
-                                                    `;
+                                                                        <div class="smart-search-item text-slate-500">
+                                                                            <i class="fas fa-plus-circle ml-1"></i> "${query}" - اضغط Enter لإضافة دواء جديد
+                                                                        </div>
+                                                                    `;
                         } else {
                             data.forEach(med => {
                                 const div = document.createElement('div');
                                 div.className = 'smart-search-item';
                                 div.innerHTML = `
-                                                            <div class="font-semibold">${med.name}</div>
-                                                            <div class="text-xs text-slate-500">${med.unit_type?.name || ''} - سعر: ${med.price_hotline}</div>
-                                                        `;
+                                                                            <div class="font-semibold">${med.name}</div>
+                                                                            <div class="text-xs text-slate-500">${med.unit_type?.name || ''} - سعر: ${med.price_hotline}</div>
+                                                                        `;
                                 div.onclick = () => selectMedicine(med);
                                 medicineResults.appendChild(div);
                             });
@@ -220,7 +220,7 @@
             document.getElementById('editStockModal').classList.remove('flex');
         }
         $(document).ready(function () {
-            $('.data-table').DataTable();
+            // Moved to app.js
         });
     </script>
 @endpush

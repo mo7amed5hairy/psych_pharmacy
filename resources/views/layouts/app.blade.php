@@ -6,12 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'قسم الحسابات')</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * {
             font-family: 'Cairo', sans-serif;
@@ -30,6 +25,10 @@
             border: 1px solid #e2e8f0;
             border-radius: 1rem;
             box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 8px 24px -12px rgba(15, 23, 42, .08);
+        }
+
+        .sky-blue {
+            background-color: var(--color-sky-50);
         }
 
         .btn {
@@ -214,7 +213,7 @@
         }
 
         .sidebar a:hover {
-            background: #f1f5f9;
+            background: #dbe6ed;
         }
 
         .sidebar a.active {
@@ -461,7 +460,7 @@
     @auth
         <div class="flex min-h-screen">
             <!-- Sidebar -->
-            <aside class="sidebar bg-sky-50" id="sidebar">
+            <aside class="sidebar bg-slate-50 border-emerald-500/10" id="sidebar">
                 <div class="logo-section flex items-center gap-3 mb-6 px-2">
                     <div
                         class="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center text-white text-xl">
@@ -821,23 +820,6 @@
             btn.classList.toggle('open');
         }
     </script>
-
-    <!-- jQuery and DataTables JS -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-
-    <script>
-        // Global DataTable defaults for Arabic language
-        $.extend(true, $.fn.dataTable.defaults, {
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/ar.json'
-            },
-            responsive: true,
-            pageLength: 10
-        });
-    </script>
-
 
     @stack('scripts')
 </body>

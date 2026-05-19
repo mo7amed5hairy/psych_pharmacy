@@ -104,8 +104,8 @@
         document.getElementById('editModal').addEventListener('click', function (e) {
             if (e.target === this) closeModal();
         });
-        $(document).ready(function() {
-            $('.data-table').DataTable();
+        $(document).ready(function () {
+            // Moved to app.js
         });
     </script>
 @endpush

@@ -192,35 +192,35 @@
             const newRow = document.createElement('div');
             newRow.className = 'medicine-row-additional grid grid-cols-1 md:grid-cols-7 gap-3 mt-3 pt-3  border-slate-200 items-end';
             newRow.innerHTML = `
-                <div class="md:col-span-2">
-                    <input type="text" name="medicines[${medicineRowCount}][name]" class="input" placeholder="مثال: باراسيتامول 500" required>
-                </div>
-                <div>
-                    <label class="label"></label>
-                    <select name="medicines[${medicineRowCount}][unit_type_id]" class="input" required>
-                        @foreach($unitTypes as $unit)
-                            <option value="{{ $unit->id }}">{{ $unit->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="label">  </label>
-                    <input type="number" name="medicines[${medicineRowCount}][price_hotline]" class="input" step="0.01" min="0" placeholder="1.25" required>
-                </div>
-                <div>
-                    <label class="label"> </label>
-                    <input type="number" name="medicines[${medicineRowCount}][price_contract]" class="input" step="0.01" min="0" placeholder="0.95" required>
-                </div>
-                <div>
-                    <label class="label"> </label>
-                    <input type="number" name="medicines[${medicineRowCount}][price_clinic]" class="input" step="0.01" min="0" placeholder="1.10" required>
-                </div>
-                <div class="flex items-center justify-center">
-                    <button type="button" onclick="removeMedicineRow(this)" class="btn btn-danger w-full h-10 flex items-center justify-center" title="حذف هذا الصف">
-                        <i class="fas fa-trash text-lg"></i>
-                    </button>
-                </div>
-            `;
+                    <div class="md:col-span-2">
+                        <input type="text" name="medicines[${medicineRowCount}][name]" class="input" placeholder="مثال: باراسيتامول 500" required>
+                    </div>
+                    <div>
+                        <label class="label"></label>
+                        <select name="medicines[${medicineRowCount}][unit_type_id]" class="input" required>
+                            @foreach($unitTypes as $unit)
+                                <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">  </label>
+                        <input type="number" name="medicines[${medicineRowCount}][price_hotline]" class="input" step="0.01" min="0" placeholder="1.25" required>
+                    </div>
+                    <div>
+                        <label class="label"> </label>
+                        <input type="number" name="medicines[${medicineRowCount}][price_contract]" class="input" step="0.01" min="0" placeholder="0.95" required>
+                    </div>
+                    <div>
+                        <label class="label"> </label>
+                        <input type="number" name="medicines[${medicineRowCount}][price_clinic]" class="input" step="0.01" min="0" placeholder="1.10" required>
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <button type="button" onclick="removeMedicineRow(this)" class="btn btn-danger w-full h-10 flex items-center justify-center" title="حذف هذا الصف">
+                            <i class="fas fa-trash text-lg"></i>
+                        </button>
+                    </div>
+                `;
             container.appendChild(newRow);
         }
 
@@ -254,7 +254,7 @@
         }
 
         $(document).ready(function () {
-            $('.data-table').DataTable();
+            // DataTables logic moved to app.js
         });
 
     </script>

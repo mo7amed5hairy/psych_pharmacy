@@ -260,7 +260,7 @@
 
             toast.className =
                 `fixed top-5 right-5 px-4 py-3 rounded shadow-lg text-white z-50
-                        ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+                            ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
 
             toast.innerText = message;
 
@@ -307,11 +307,11 @@
                                     div.className = 'smart-search-item';
 
                                     div.innerHTML = `
-                                                <div class="font-semibold">${med.name}</div>
-                                                <div class="text-xs text-slate-500">
-                                                    ${med.unit_type?.name || ''} - سعر: ${med.price_hotline}
-                                                </div>
-                                            `;
+                                                    <div class="font-semibold">${med.name}</div>
+                                                    <div class="text-xs text-slate-500">
+                                                        ${med.unit_type?.name || ''} - سعر: ${med.price_hotline}
+                                                    </div>
+                                                `;
 
                                     div.onclick = () => selectMedicine(
                                         med,
@@ -415,32 +415,32 @@
 
             row.innerHTML = `
 
-                        <div class="col-span-2">
-                            <input type="text" name="medicines[${index}][referral_number]" class="input referral-input">
-                        </div>
-
-                        <div class="col-span-2">
-                            <input type="date" name="medicines[${index}][dispense_date]" class="input" value="{{ date('Y-m-d') }}" required>
-                        </div>
-
-                        <div class="col-span-5">
-                            <div class="relative">
-                                <input type="text" class="input medicine-search" placeholder="🔎 ابحث عن الدواء..." autocomplete="off">
-                                <input type="hidden" name="medicines[${index}][medicine_id]" class="medicine-id">
-                                <div class="smart-search-results"></div>
+                            <div class="col-span-2">
+                                <input type="text" name="medicines[${index}][referral_number]" class="input referral-input">
                             </div>
-                        </div>
 
-                        <div class="col-span-2">
-                            <input type="number" name="medicines[${index}][quantity]" class="input" min="1" required>
-                        </div>
+                            <div class="col-span-2">
+                                <input type="date" name="medicines[${index}][dispense_date]" class="input" value="{{ date('Y-m-d') }}" required>
+                            </div>
 
-                        <div class="col-span-1">
-                            <button type="button" onclick="removeDispensedRow(this)" class="btn btn-danger mt-2">
-                                حذف
-                            </button>
-                        </div>
-                    `;
+                            <div class="col-span-5">
+                                <div class="relative">
+                                    <input type="text" class="input medicine-search" placeholder="🔎 ابحث عن الدواء..." autocomplete="off">
+                                    <input type="hidden" name="medicines[${index}][medicine_id]" class="medicine-id">
+                                    <div class="smart-search-results"></div>
+                                </div>
+                            </div>
+
+                            <div class="col-span-2">
+                                <input type="number" name="medicines[${index}][quantity]" class="input" min="1" required>
+                            </div>
+
+                            <div class="col-span-1">
+                                <button type="button" onclick="removeDispensedRow(this)" class="btn btn-danger mt-2">
+                                    حذف
+                                </button>
+                            </div>
+                        `;
 
             container.appendChild(row);
 
@@ -492,7 +492,7 @@
         });
 
         $(document).ready(function () {
-            $('.data-table').DataTable();
+            // Moved to app.js
         });
 
     </script>

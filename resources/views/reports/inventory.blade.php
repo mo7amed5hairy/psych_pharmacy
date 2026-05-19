@@ -144,38 +144,38 @@
 
 
             printWindow.document.write(`
-                        <!DOCTYPE html>
-                        <html dir="rtl">
-                        <head>
-                            <meta charset="utf-8">
-                            <title>تقرير الجرد</title>
-                            <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-                            <style>
-                                * { font-family: 'Cairo', sans-serif; }
-                                body { padding: 20px; }
-                                h1 { text-align: center; margin-bottom: 10px; }
-                                .info { text-align: center; margin-bottom: 20px; color: #666; }
-                                table { width: 100%; border-collapse: collapse; }
-                                th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-                                th { background: #f1f5f9; font-weight: 600; }
-                                .low { color: #dc2626; font-weight: bold; }
-                            </style>
-                        </head>
-                        <body>
-                            <h1>تقرير الجرد</h1>
-                            <div class="info">من ${fromDate} إلى ${toDate}<br>الموظف: ${user}</div>
-                            ${document.getElementById('inventoryTable').outerHTML}
-                            <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #999;">
-                                تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
-                            </div>
-                            <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
-                        </body>
-                        </html>
-                    `);
+                            <!DOCTYPE html>
+                            <html dir="rtl">
+                            <head>
+                                <meta charset="utf-8">
+                                <title>تقرير الجرد</title>
+                                <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+                                <style>
+                                    * { font-family: 'Cairo', sans-serif; }
+                                    body { padding: 20px; }
+                                    h1 { text-align: center; margin-bottom: 10px; }
+                                    .info { text-align: center; margin-bottom: 20px; color: #666; }
+                                    table { width: 100%; border-collapse: collapse; }
+                                    th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+                                    th { background: #f1f5f9; font-weight: 600; }
+                                    .low { color: #dc2626; font-weight: bold; }
+                                </style>
+                            </head>
+                            <body>
+                                <h1>تقرير الجرد</h1>
+                                <div class="info">من ${fromDate} إلى ${toDate}<br>الموظف: ${user}</div>
+                                ${document.getElementById('inventoryTable').outerHTML}
+                                <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #999;">
+                                    تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
+                                </div>
+                                <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
+                            </body>
+                            </html>
+                        `);
             printWindow.document.close();
         }
         $(document).ready(function () {
-            $('.data-table').DataTable();
+            // Moved to app.js
         });
     </script>
 @endpush

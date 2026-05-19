@@ -53,7 +53,7 @@
     @push('scripts')
         <script>
             $(document).ready(function () {
-                $('.data-table').DataTable();
+                // Moved to app.js
             });
         </script>
     @endpush
