@@ -104,8 +104,5 @@
         document.getElementById('editModal').addEventListener('click', function (e) {
             if (e.target === this) closeModal();
         });
-        $(document).ready(function () {
-            // Moved to app.js
-        });
     </script>
 @endpush

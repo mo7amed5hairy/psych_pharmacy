@@ -116,34 +116,43 @@
             const user = '{{ auth()->user()->name }} ({{ auth()->user()->employee_code }})';
 
             printWindow.document.write(`
-                                    <!DOCTYPE html>
-                                    <html dir="rtl">
-                                    <head>
-                                        <meta charset="utf-8">
-                                        <title>كشف المنصرف الشهري</title>
-                                        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-                                        <style>
-                                            * { font-family: 'Cairo', sans-serif; }
-                                            body { padding: 20px; }
-                                            h1 { text-align: center; margin-bottom: 10px; margin-top:0;}
-                                            .info { text-align: center; margin-bottom: 20px; color: #666; }
-                                            table { width: 100%; border-collapse: collapse; font-size: 11px; }
-                                            th, td { border: 1px solid #ddd; padding: 4px; text-align: center; }
-                                            th { background: #f1f5f9; font-weight: 600; }
-                                            .total { font-weight: bold; background: #dbeafe; }
-                                        </style>
-                                    </head>
-                                    <body>
-                                        <h1>كشف المنصرف الشهري</h1>
-                                        <div class="info">${monthYear} - الموظف: ${user}</div>
-                                        ${document.getElementById('monthlyTable').outerHTML}
-                                        <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #999;">
-                                            تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
-                                        </div>
-                                        <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
-                                    </body>
-                                    </html>
-                                `);
+                                                                        <!DOCTYPE html>
+                                                                        <html dir="rtl">
+                                                                        <head>
+                                                                            <meta charset="utf-8">
+                                                                            <title>كشف المنصرف الشهري</title>
+                                                                            <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+                                                                            <style>
+                                                                                * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
+                                                                                body { padding: 15px; }
+                                                                                h1 { text-align: center; margin-bottom: 5px; margin-top:0;}
+                                                                                .info { text-align: center; margin-bottom: 15px; color: #666; font-size: 12px; }
+                                                                                table { width: 30% !important; margin: 0 auto; border-collapse: collapse; font-size: .7rem !important; table-layout: auto; }
+                                                                                th, td { border: 1px solid #000; padding: 2px; text-align: center; }
+                                                                                /* First column (Medicine) should be flexible and take room */
+                                                                                th:first-child, td:first-child { width: auto; text-align: right; min-width: 80px; }
+
+                                                                                th:nth-child(1), td:nth-child(1) { text-align: right; width: 51px !important; } /* الصنف */
+                                                                                th:nth-child(2), td:nth-child(2) { width: 15px !important; } /* الرقم التكرارى   */
+                                                                                th:nth-child(3), td:nth-child(3) { width: 15px !important; } /* الرصيد */
+                                                                                th:nth-child(4), td:nth-child(4) { width: 15px !important; } /* الاجمالى */
+
+                                                                                /* All other columns should be narrow */
+                                                                                th:not(:first-child), td:not(:first-child) { width: 35px; white-space: nowrap; }
+                                                                                .total { font-weight: bold; background: #fff; }
+                                                                            </style>
+                                                                        </head>
+                                                                        <body>
+                                                                            <h1>كشف المنصرف الشهري</h1>
+                                                                            <div class="info">${monthYear} - الموظف: ${user}</div>
+                                                                            ${document.getElementById('monthlyTable').outerHTML}
+                                                                            <div style="margin-top: 15px; text-align: center; font-size: 10px; color: #999;">
+                                                                                تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
+                                                                            </div>
+                                                                            <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
+                                                                        </body>
+                                                                        </html>
+                                                                    `);
             printWindow.document.close();
         }
 

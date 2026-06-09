@@ -100,28 +100,28 @@
         }
 
         .date-row td {
-            background: #e8e8e8;
+            background: #fff;
             font-weight: 600;
             width: 34%;
         }
 
         .col-headers th {
-            background: #e0e0d8;
+            background: #fff;
             font-weight: 700;
             font-size: 12px;
             width: 79%;
         }
 
         .data-row td {
-            background: #fafaf8;
+            background: #fff;
         }
 
         .data-row:nth-child(even) td {
-            background: #f2f2ee;
+            background: #fff;
         }
 
         .total-row td {
-            background: #e8e8e0;
+            background: #fff;
             font-weight: 700;
             font-size: 13px;
         }

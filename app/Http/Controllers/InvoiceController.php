@@ -33,23 +33,27 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'patient_name' => 'required|string|max:200',
+            'patient_name' => 'nullable|string|max:200',
             'referral_number' => 'required|string|max:50',
             'items' => 'required|array|min:1',
             'items.*.medicine_id' => 'required|exists:medicines,id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
-        // Check duplicate referral number for this user
+        // Check duplicate referral number for this user (same date only)
         $ref = $validated['referral_number'];
-        $exists = \App\Models\Invoice::where('referral_number', $ref)->where('user_id', Auth::id())->exists()
-            || \App\Models\DispensedMedicine::where('referral_number', $ref)->where('user_id', Auth::id())->exists();
-        if ($exists) {
-            $maxInv = (int) \App\Models\Invoice::where('user_id', Auth::id())->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) as m')->value('m');
-            $maxDM = (int) \App\Models\DispensedMedicine::where('user_id', Auth::id())->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) as m')->value('m');
-            $next = max($maxInv, $maxDM) + 1;
+        $today = now()->format('Y-m-d');
+        $exists = \App\Models\Invoice::where('referral_number', $ref)
+            ->where('user_id', Auth::id())
+            ->whereDate('created_at', $today)
+            ->exists()
+            || \App\Models\DispensedMedicine::where('referral_number', $ref)
+                ->where('user_id', Auth::id())
+                ->whereDate('dispense_date', $today)
+                ->exists();
 
-            $msg = "الرقم \"{$ref}\" مستخدم من قبل — الرقم التالي المتاح: {$next}";
+        if ($exists) {
+            $msg = "الرقم \"{$ref}\" مستخدم مسبقاً في هذا التاريخ (لمنع التكرار في نفس اليوم)";
             if ($request->expectsJson()) {
                 return response()->json(['errors' => ['referral_number' => [$msg]]], 422);
             }
@@ -60,7 +64,7 @@ class InvoiceController extends Controller
         try {
             $invoice = Invoice::create([
                 'user_id' => Auth::id(),
-                'patient_name' => $validated['patient_name'],
+                'patient_name' => $validated['patient_name'] ?? '-',
                 'referral_number' => $validated['referral_number'],
             ]);
 

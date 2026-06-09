@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'قسم الحسابات')</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💊</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💊</text></svg>">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * {
@@ -479,19 +480,21 @@
                         onclick="showLoader()">
                         <i class="fas fa-home"></i><span>الرئيسية</span>
                     </a>
-                    <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}"
-                        onclick="showLoader()">
-                        <i class="fas fa-users-cog"></i><span>إدارة المستخدمين</span>
-                    </a>
+                    @if(in_array(auth()->user()->employee_code, ['7777', '1010']))
+                        <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}"
+                            onclick="showLoader()">
+                            <i class="fas fa-users-cog"></i><span>إدارة المستخدمين</span>
+                        </a>
 
-                    <a href="{{ route('medicines.index') }}" class="{{ request()->routeIs('medicines.*') ? 'active' : '' }}"
-                        onclick="showLoader()">
-                        <i class="fas fa-book-medical"></i><span>قاموس الأدوية</span>
-                    </a>
-                    <a href="{{ route('units.index') }}" class="{{ request()->routeIs('units.*') ? 'active' : '' }}"
-                        onclick="showLoader()">
-                        <i class="fas fa-shapes"></i><span>أنواع الوحدات</span>
-                    </a>
+                        <a href="{{ route('medicines.index') }}" class="{{ request()->routeIs('medicines.*') ? 'active' : '' }}"
+                            onclick="showLoader()">
+                            <i class="fas fa-book-medical"></i><span>قاموس الأدوية</span>
+                        </a>
+                        <a href="{{ route('units.index') }}" class="{{ request()->routeIs('units.*') ? 'active' : '' }}"
+                            onclick="showLoader()">
+                            <i class="fas fa-shapes"></i><span>أنواع الوحدات</span>
+                        </a>
+                    @endif
                     <a href="{{ route('stock.index') }}" class="{{ request()->routeIs('stock.*') ? 'active' : '' }}"
                         onclick="showLoader()">
                         <i class="fas fa-boxes"></i><span>أرصدة الأدوية</span>
@@ -776,32 +779,26 @@
 
         }
 
-        // Notification Dropdown
-        const notifToggle = document.getElementById('notif-toggle');
-        const notifDropdown = document.getElementById('notif-dropdown');
+        window.addEventListener('load', function() {
+            const $ = window.jQuery;
 
-        if (notifToggle && notifDropdown) {
+            // Notification Bell Toggle
+            const notifToggle = document.getElementById('notif-toggle');
+            const notifDropdown = document.getElementById('notif-dropdown');
 
-            notifToggle.addEventListener('click', (e) => {
+            if (notifToggle && notifDropdown) {
+                notifToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    notifDropdown.classList.toggle('hidden');
+                });
 
-                e.stopPropagation();
-
-                notifDropdown.classList.toggle('hidden');
-
-            });
-
-            document.addEventListener('click', (e) => {
-
-                if (
-                    !notifDropdown.contains(e.target) &&
-                    !notifToggle.contains(e.target)
-                ) {
-                    notifDropdown.classList.add('hidden');
-                }
-
-            });
-
-        }
+                document.addEventListener('click', (e) => {
+                    if (!notifDropdown.contains(e.target) && !notifToggle.contains(e.target)) {
+                        notifDropdown.classList.add('hidden');
+                    }
+                });
+            }
+        });
 
         // Sidebar Dropdown Toggle
         function toggleSidebarDropdown(id) {

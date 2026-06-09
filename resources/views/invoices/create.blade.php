@@ -150,12 +150,12 @@
                                 div.className = 'smart-search-item';
 
                                 div.innerHTML = `
-                                <div class="font-semibold">${med.name}</div>
-                                <div class="text-xs text-slate-500">
-                                    ${(med.unit_type?.name || '')}
-                                    - سعر الخط الساخن: ${med.price_hotline} ج
-                                </div>
-                            `;
+                                                <div class="font-semibold">${med.name}</div>
+                                                <div class="text-xs text-slate-500">
+                                                    ${(med.unit_type?.name || '')}
+                                                    - سعر الخط الساخن: ${med.price_hotline} ج
+                                                </div>
+                                            `;
 
                                 div.onclick = () => selectMedicineItem(med);
 
@@ -248,23 +248,23 @@
                 const row = document.createElement('tr');
 
                 row.innerHTML = `
-                <td>${patientName}</td>
-                <td>${invoiceDate}</td>
-                <td>${item.name}</td>
-                <td>${item.price.toFixed(2)}</td>
-                <td>${item.quantity}</td>
-                <td class="font-bold">${item.subtotal.toFixed(2)}</td>
+                                <td>${patientName}</td>
+                                <td>${invoiceDate}</td>
+                                <td>${item.name}</td>
+                                <td>${item.price.toFixed(2)}</td>
+                                <td>${item.quantity}</td>
+                                <td class="font-bold">${item.subtotal.toFixed(2)}</td>
 
-                <td>
-                    <button
-                        type="button"
-                        onclick="removeItem(${index})"
-                        class="btn btn-danger"
-                    >
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
+                                <td>
+                                    <button
+                                        type="button"
+                                        onclick="removeItem(${index})"
+                                        class="btn btn-danger"
+                                    >
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            `;
 
                 tbody.appendChild(row);
 
@@ -322,334 +322,334 @@
             invoiceItems.forEach((item) => {
 
                 itemsHtml += `
-        <tr class="data-row">
+                        <tr class="data-row">
 
-            <td colspan="2">
-                ${item.name}
-            </td>
+                            <td colspan="2">
+                                ${item.name}
+                            </td>
 
-            <td colspan="1">
-                ج.م ${item.price.toFixed(3)}
-            </td>
+                            <td colspan="1">
+                                ج.م ${item.price.toFixed(3)}
+                            </td>
 
-            <td>
-                ${item.quantity}
-            </td>
+                            <td>
+                                ${item.quantity}
+                            </td>
 
-            <td>
-                ${item.subtotal.toFixed(2)}
-            </td>
+                            <td>
+                                ${item.subtotal.toFixed(2)}
+                            </td>
 
-        </tr>
-    `;
+                        </tr>
+                    `;
 
             });
 
             const logoUrl = '{{ asset('images/ain-shams-logo.jpg') }}';
 
             const printContent = `
-    <!DOCTYPE html>
-
-    <html lang="ar" dir="rtl">
-
-    <head>
-
-    <meta charset="utf-8">
-
-    <title>فاتورة صرف</title>
-
-    <style>
-
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
-
-    *{
-        margin:0;
-        padding:0;
-        box-sizing:border-box;
-    }
-
-    body{
-        background:#d0d0d0;
-        display:flex;
-        justify-content:center;
-        align-items:flex-start;
-        min-height:100vh;
-        font-family:'Cairo', Arial, sans-serif;
-        padding:30px 0;
-    }
-
-    .page{
-        background:#f5f5f0;
-        width:720px;
-        padding:30px 35px 40px;
-        box-shadow:0 4px 20px rgba(0,0,0,0.3);
-    }
-
-    /* HEADER */
-
-    .header{
-        display:flex;
-        justify-content:flex-start;
-        align-items:flex-start;
-        margin-bottom:10px;
-    }
-
-    .logo-area{
-        display:flex;
-        flex-direction:column;
-        align-items:flex-start;
-        gap:3px;
-    }
-
-    .logo-area img{
-        width:70px;
-        height:70px;
-        object-fit:contain;
-    }
-
-    .clinic-name{
-        font-size:13px;
-        font-weight:700;
-        color:#222;
-    }
-
-    .clinic-sub{
-        font-size:10px;
-        color:#444;
-    }
-
-    /* TITLE */
-
-    .invoice-title{
-        text-align:center;
-        font-size:16px;
-        font-weight:700;
-        margin:8px 0 4px;
-        color:#111;
-    }
-
-    .designer{
-        font-size:9px;
-        color:#888;
-        margin-bottom:8px;
-        direction:ltr;
-        text-align:left;
-    }
-
-    /* TABLE */
-
-    .table-wrapper{
-        border:2.5px solid #000;
-        overflow:hidden;
-    }
-
-    table{
-        width:100%;
-        border-collapse:collapse;
-        font-size:12.5px;
-        color:#111;
-    }
+                    <!DOCTYPE html>
+
+                    <html lang="ar" dir="rtl">
+
+                    <head>
+
+                    <meta charset="utf-8">
+
+                    <title>فاتورة صرف</title>
+
+                    <style>
+
+                    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+                    *{
+                        margin:0;
+                        padding:0;
+                        box-sizing:border-box;
+                    }
+
+                    body{
+                        background:#d0d0d0;
+                        display:flex;
+                        justify-content:center;
+                        align-items:flex-start;
+                        min-height:100vh;
+                        font-family:'Cairo', Arial, sans-serif;
+                        padding:30px 0;
+                    }
+
+                    .page{
+                        background:#f5f5f0;
+                        width:720px;
+                        padding:30px 35px 40px;
+                        box-shadow:0 4px 20px rgba(0,0,0,0.3);
+                    }
+
+                    /* HEADER */
+
+                    .header{
+                        display:flex;
+                        justify-content:flex-start;
+                        align-items:flex-start;
+                        margin-bottom:10px;
+                    }
+
+                    .logo-area{
+                        display:flex;
+                        flex-direction:column;
+                        align-items:flex-start;
+                        gap:3px;
+                    }
+
+                    .logo-area img{
+                        width:70px;
+                        height:70px;
+                        object-fit:contain;
+                    }
+
+                    .clinic-name{
+                        font-size:13px;
+                        font-weight:700;
+                        color:#222;
+                    }
+
+                    .clinic-sub{
+                        font-size:10px;
+                        color:#444;
+                    }
+
+                    /* TITLE */
+
+                    .invoice-title{
+                        text-align:center;
+                        font-size:16px;
+                        font-weight:700;
+                        margin:8px 0 4px;
+                        color:#111;
+                    }
+
+                    .designer{
+                        font-size:9px;
+                        color:#888;
+                        margin-bottom:8px;
+                        direction:ltr;
+                        text-align:left;
+                    }
+
+                    /* TABLE */
+
+                    .table-wrapper{
+                        border:2.5px solid #000;
+                        overflow:hidden;
+                    }
+
+                    table{
+                        width:100%;
+                        border-collapse:collapse;
+                        font-size:12.5px;
+                        color:#111;
+                    }
 
-    th,
-    td{
-        border:1.5px solid #000 !important;
-        padding:6px 10px;
-        text-align:revert;
-    }
+                    th,
+                    td{
+                        border:1.5px solid #000 !important;
+                        padding:6px 10px;
+                        text-align:revert;
+                    }
 
-    .date-row td{
-        background:#e8e8e8;
-        font-weight:600;
-        width:34%;
-    }
+                    .date-row td{
+                    background:#fff;
+                    font-weight:600;
+                    width:34%;
+                }
 
-    .col-headers th{
-        background:#e0e0d8;
-        font-weight:700;
-        font-size:12px;
-        width: 79%;
-    }
+                .col-headers th{
+                    background:#fff;
+                    font-weight:700;
+                    font-size:12px;
+                    width: 79%;
+                }
 
-    .data-row td{
-        background:#fafaf8;
-    }
+                .data-row td{
+                    background:#fff;
+                }
 
-    .data-row:nth-child(even) td{
-        background:#f2f2ee;
-    }
+                .data-row:nth-child(even) td{
+                    background:#fff;
+                }
 
-    .total-row td{
-        background:#e8e8e0;
-        font-weight:700;
-        font-size:13px;
-    }
+                .total-row td{
+                    background:#fff;
+                    font-weight:700;
+                    font-size:13px;
+                }
 
-    .total-row .total-label{
-        text-align:right;
-        padding-right:20px;
-        font-size:12px;
-        letter-spacing:1px;
-        border-left: 0px !important;
-    }
+                .total-row .total-label{
+                    text-align:right;
+                    padding-right:20px;
+                    font-size:12px;
+                    letter-spacing:1px;
+                    border-left: 0px !important;
+                }
 
-    /* FOOTER */
+                    /* FOOTER */
 
-    .footer{
-        display:flex;
-        justify-content:space-between;
-        margin-top:30px;
-        font-size:12px;
-        font-weight:600;
-        color:#222;
-        padding:0 10px;
-    }
+                    .footer{
+                        display:flex;
+                        justify-content:space-between;
+                        margin-top:30px;
+                        font-size:12px;
+                        font-weight:600;
+                        color:#222;
+                        padding:0 10px;
+                    }
 
-    .footer span{
-        text-align:center;
-    }
+                    .footer span{
+                        text-align:center;
+                    }
 
-    @media print {
+                    @media print {
 
-        body{
-            background:none;
-            padding:0;
-        }
+                        body{
+                            background:none;
+                            padding:0;
+                        }
 
-        .page{
-            box-shadow:none;
-        }
+                        .page{
+                            box-shadow:none;
+                        }
 
-        table,
-        th,
-        td{
-            border:1.5px solid #000 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-    .total-row .total-label{
-        border-left: 0px !important;
-    }
+                        table,
+                        th,
+                        td{
+                            border:1.5px solid #000 !important;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                    .total-row .total-label{
+                        border-left: 0px !important;
+                    }
 
 
 
 
 
-    }
+                    }
 
-    </style>
+                    </style>
 
-    </head>
+                    </head>
 
-    <body>
+                    <body>
 
-    <div class="page">
+                    <div class="page">
 
-        <!-- HEADER -->
+                        <!-- HEADER -->
 
-        <div class="header">
+                        <div class="header">
 
-            <div class="logo-area">
+                            <div class="logo-area">
 
-                <img
-                    src="${logoUrl}"
-                    alt="مستشفيات جامعة عين شمس"
-                >
+                                <img
+                                    src="${logoUrl}"
+                                    alt="مستشفيات جامعة عين شمس"
+                                >
 
-                <div class="clinic-name">
-                    قسم الحسابات
-                </div>
+                                <div class="clinic-name">
+                                    قسم الحسابات
+                                </div>
 
-                <div class="clinic-sub">
-                    مرسل الى حقوق مكافحة وعلاج الإدمان
-                </div>
+                                <div class="clinic-sub">
+                                    مرسل الى حقوق مكافحة وعلاج الإدمان
+                                </div>
 
-            </div>
+                            </div>
 
-        </div>
+                        </div>
 
-        <!-- TITLE -->
+                        <!-- TITLE -->
 
-        <div class="invoice-title">
-            فاتورة رقم ${referralNumber}
-        </div>
+                        <div class="invoice-title">
+                            فاتورة رقم ${referralNumber}
+                        </div>
 
-        <div class="designer">
-            Designed by Eng Mohamed Khairy
-        </div>
+                        <div class="designer">
+                            Designed by Eng Mohamed Khairy
+                        </div>
 
-        <!-- TABLE -->
-    <div class="table-wrapper">
-        <table>
+                        <!-- TABLE -->
+                    <div class="table-wrapper">
+                        <table>
 
-            <tr class="date-row">
+                            <tr class="date-row">
 
-                <td>الاسم</td>
+                                <td>الاسم</td>
 
-                <td colspan="2">
-                    ${patientName}
-                </td>
+                                <td colspan="2">
+                                    ${patientName}
+                                </td>
 
-                <td>تاريخ الصرف</td>
+                                <td>تاريخ الصرف</td>
 
-                <td>
-                    ${date}
-                </td>
+                                <td>
+                                    ${date}
+                                </td>
 
-            </tr>
+                            </tr>
 
-            <tr class="col-headers">
+                            <tr class="col-headers">
 
-                <th colspan="2">الصنف</th>
+                                <th colspan="2">الصنف</th>
 
-                <th>سعر القرص</th>
+                                <th>سعر القرص</th>
 
-                <th>المصرف</th>
+                                <th>المصرف</th>
 
-                <th>القيمة</th>
+                                <th>القيمة</th>
 
-            </tr>
+                            </tr>
 
-            ${itemsHtml}
+                            ${itemsHtml}
 
-            <tr class="total-row">
+                            <tr class="total-row">
 
-                <td colspan="2" class="total-label">
-                    الإجمالي
-                </td>
+                                <td colspan="2" class="total-label">
+                                    الإجمالي
+                                </td>
 
-                <td colspan="2" style="border-right-width: 0 !important;">ج.م</td>
+                                <td colspan="2" style="border-right-width: 0 !important;">ج.م</td>
 
-                <td>
-                    ${totalAmount.toFixed(2)}
-                </td>
+                                <td>
+                                    ${totalAmount.toFixed(2)}
+                                </td>
 
-            </tr>
+                            </tr>
 
-        </table>
-    </div>
-        <!-- FOOTER -->
+                        </table>
+                    </div>
+                        <!-- FOOTER -->
 
-        <div class="footer">
+                        <div class="footer">
 
-            <span class="invoice-title">قسم الحسابات</span>
+                            <span class="invoice-title">قسم الحسابات</span>
 
-            <span class="invoice-title">مدير الشئون المالية والإدارية</span>
+                            <span class="invoice-title">مدير الشئون المالية والإدارية</span>
 
-            <span class="invoice-title">مدير الصيدلية</span>
+                            <span class="invoice-title">مدير الصيدلية</span>
 
-        </div>
+                        </div>
 
-    </div>
+                    </div>
 
-    <script>
-    window.onload = () => {
-        setTimeout(() => window.print(), 400);
-    };
-    <\/script>
+                    <script>
+                    window.onload = () => {
+                        setTimeout(() => window.print(), 400);
+                    };
+                    <\/script>
 
-    </body>
-    </html>
-    `;
+                    </body>
+                    </html>
+                    `;
 
             printWindow.document.write(printContent);
 
@@ -658,54 +658,53 @@
 
         function saveInvoice() {
 
-                if (invoiceItems.length === 0) {
-                    alert('الرجاء إضافة أصناف للفاتورة أولاً');
-                    return;
-                }
-
-                const patientName = document.getElementById('patientName').value.trim();
-                const referralNumber = document.getElementById('referralNumber').value.trim();
-                const date = document.getElementById('invoiceDate').value;
-
-                if (!patientName) { alert('الرجاء إدخال اسم المريض'); return; }
-                if (!referralNumber) { alert('الرجاء إدخال رقم التحويل'); return; }
-
-                const data = {
-                    patient_name: patientName,
-                    referral_number: referralNumber,
-                    items: invoiceItems.map(item => ({
-                        medicine_id: item.medicine_id,
-                        quantity: item.quantity
-                    }))
-                };
-
-                ajaxRequest('{{ route('invoices.store') }}', {
-                    method: 'POST',
-                    body: JSON.stringify(data)
-                })
-                    .then(res => {
-                        if (res.redirected) {
-                            window.location.href = res.url;
-                            return;
-                        }
-                        return res.json();
-                    })
-                    .then(result => {
-                        if (result && result.errors) {
-                            let msg = 'حدثت الأخطاء التالية:\n';
-                            for (let k in result.errors) msg += '- ' + result.errors[k].join('\n') + '\n';
-                            alert(msg);
-                        } else if (result && result.redirect) {
-                            window.location.href = result.redirect;
-                        } else if (result && result.message) {
-                            alert(result.message);
-                        }
-                    })
-
-                    .catch(err => {
-                        console.error(err);
-                    });
+            if (invoiceItems.length === 0) {
+                alert('الرجاء إضافة أصناف للفاتورة أولاً');
+                return;
             }
+
+            const referralNumber = document.getElementById('referralNumber').value.trim();
+            const patientName = document.getElementById('patientName').value.trim();
+            const date = document.getElementById('invoiceDate').value;
+
+            if (!referralNumber) { alert('الرجاء إدخال رقم التحويل'); return; }
+
+            const data = {
+                patient_name: patientName || '-',
+                referral_number: referralNumber,
+                items: invoiceItems.map(item => ({
+                    medicine_id: item.medicine_id,
+                    quantity: item.quantity
+                }))
+            };
+
+            ajaxRequest('{{ route('invoices.store') }}', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            })
+                .then(res => {
+                    if (res.redirected) {
+                        window.location.href = res.url;
+                        return;
+                    }
+                    return res.json();
+                })
+                .then(result => {
+                    if (result && result.errors) {
+                        let msg = 'حدثت الأخطاء التالية:\n';
+                        for (let k in result.errors) msg += '- ' + result.errors[k].join('\n') + '\n';
+                        alert(msg);
+                    } else if (result && result.redirect) {
+                        window.location.href = result.redirect;
+                    } else if (result && result.message) {
+                        alert(result.message);
+                    }
+                })
+
+                .catch(err => {
+                    console.error(err);
+                });
+        }
     </script>
 
 @endpush

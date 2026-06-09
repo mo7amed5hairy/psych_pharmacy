@@ -6,6 +6,7 @@
 
 @section('content')
     <!-- Filter Form -->
+
     <div class="card p-5 mb-5">
         <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
@@ -144,38 +145,41 @@
 
 
             printWindow.document.write(`
-                            <!DOCTYPE html>
-                            <html dir="rtl">
-                            <head>
-                                <meta charset="utf-8">
-                                <title>تقرير الجرد</title>
-                                <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-                                <style>
-                                    * { font-family: 'Cairo', sans-serif; }
-                                    body { padding: 20px; }
-                                    h1 { text-align: center; margin-bottom: 10px; }
-                                    .info { text-align: center; margin-bottom: 20px; color: #666; }
-                                    table { width: 100%; border-collapse: collapse; }
-                                    th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-                                    th { background: #f1f5f9; font-weight: 600; }
-                                    .low { color: #dc2626; font-weight: bold; }
-                                </style>
-                            </head>
-                            <body>
-                                <h1>تقرير الجرد</h1>
-                                <div class="info">من ${fromDate} إلى ${toDate}<br>الموظف: ${user}</div>
-                                ${document.getElementById('inventoryTable').outerHTML}
-                                <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #999;">
-                                    تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
-                                </div>
-                                <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
-                            </body>
-                            </html>
-                        `);
+                                                                                                                        <!DOCTYPE html>
+                                                                                                                        <html dir="rtl">
+                                                                                                                        <head>
+                                                                                                                            <meta charset="utf-8">
+                                                                                                                            <title>تقرير الجرد</title>
+                                                                                                                            <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+                                                                                                                            <style>
+                                                                                                                                * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
+                                                                                                                                body { padding: 20px; }
+                                                                                                                                h1 { text-align: center; margin-bottom: 10px; }
+                                                                                                                                .info { text-align: center; margin-bottom: 20px; color: #666; }
+                                                                                                                                table { width: 600px !important; margin: 0 auto; border-collapse: collapse; table-layout: fixed; }
+                                                                                                                                th, td { border: 1px solid #000; padding: 4px; text-align: center; font-size: 11px; word-wrap: break-word; overflow: hidden; }
+                                                                                                                                th { background: #fff; font-weight: 700; }
+                                                                                                                                /* Final precise widths provided by user */
+                                                                                                                                th:nth-child(1), td:nth-child(1) { text-align: right; width: 51px !important; } /* الصنف */
+                                                                                                                                th:nth-child(2), td:nth-child(2) { width: 15px !important; } /* الوحدة */
+                                                                                                                                th:nth-child(3), td:nth-child(3) { width: 15px !important; } /* الرصيد */
+                                                                                                                                th:nth-child(4), td:nth-child(4) { width: 15px !important; } /* المنصرف */
+                                                                                                                                th:nth-child(5), td:nth-child(5) { width: 15px !important; } /* المتبقي */
+                                                                                                                                .low { color: #000; font-weight: bold; }
+                                                                                                                            </style>
+                                                                                                                        </head>
+                                                                                                                        <body>
+                                                                                                                            <h1>تقرير الجرد</h1>
+                                                                                                                            <div class="info">من ${fromDate} إلى ${toDate}<br>الموظف: ${user}</div>
+                                                                                                                            ${document.getElementById('inventoryTable').outerHTML}
+                                                                                                                            <div style="margin-top: 20px; text-align: center; font-size: 11px; color: #999;">
+                                                                                                                                تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
+                                                                                                                            </div>
+                                                                                                                            <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
+                                                                                                                        </body>
+                                                                                                                        </html>
+                                                                                                                    `);
             printWindow.document.close();
         }
-        $(document).ready(function () {
-            // Moved to app.js
-        });
     </script>
 @endpush

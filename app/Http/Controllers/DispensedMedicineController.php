@@ -57,13 +57,17 @@ class DispensedMedicineController extends Controller
                 return response()->json(['status' => 'error', 'message' => "الرقم \"{$ref}\" مكرر في نفس الطلب"], 422);
             }
             $usedRefs[] = $ref;
-            $exists = \App\Models\Invoice::where('referral_number', $ref)->where('user_id', Auth::id())->exists()
-                || \App\Models\DispensedMedicine::where('referral_number', $ref)->where('user_id', Auth::id())->exists();
-            if ($exists) {
-                $maxInv = (int) \App\Models\Invoice::where('user_id', Auth::id())->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) as m')->value('m');
-                $maxDM = (int) \App\Models\DispensedMedicine::where('user_id', Auth::id())->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) as m')->value('m');
-                $next = max($maxInv, $maxDM) + 1;
-                return response()->json(['status' => 'error', 'message' => "الرقم \"{$ref}\" مستخدم من قبل — الرقم التالي المتاح: {$next}"], 422);
+            $existsOriginal = \App\Models\Invoice::where('referral_number', $ref)
+                ->where('user_id', Auth::id())
+                ->whereDate('created_at', $item['dispense_date'])
+                ->exists()
+                || \App\Models\DispensedMedicine::where('referral_number', $ref)
+                    ->where('user_id', Auth::id())
+                    ->whereDate('dispense_date', $item['dispense_date'])
+                    ->exists();
+
+            if ($existsOriginal) {
+                return response()->json(['status' => 'error', 'message' => "الرقم \"{$ref}\" مستخدم مسبقاً في هذا التاريخ (لمنع التكرار في نفس اليوم)"], 422);
             }
         }
 

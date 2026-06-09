@@ -19,24 +19,33 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // Users
-    Route::resource('users', UserController::class);
-
+    // Unauthorized Access Page
+    Route::get('/unauthorized', function () {
+        return view('errors.unauthorized');
+    })->name('unauthorized');
 
     // Dashboard
     Route::get('/index', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
-    // Medicines
+    // Medicines Search (Public for all pharmacists)
     Route::get('/medicines/search', [MedicineController::class, 'search'])->name('medicines.search');
-    Route::resource('medicines', MedicineController::class);
-    Route::post('/medicines/{medicine}/update', [MedicineController::class, 'update'])->name('medicines.update.post');
-    Route::post('/medicines/{medicine}/delete', [MedicineController::class, 'destroy'])->name('medicines.destroy.post');
 
-    // Unit Types
-    Route::resource('units', UnitTypeController::class)->except(['show']);
-    Route::post('/units/{unitType}/update', [UnitTypeController::class, 'update'])->name('units.update.post');
-    Route::post('/units/{unitType}/delete', [UnitTypeController::class, 'destroy'])->name('units.destroy.post');
+    // Admin-only Routes
+    Route::middleware(['admin'])->group(function () {
+        // Users
+        Route::resource('users', UserController::class);
+
+        // Medicines Management
+        Route::resource('medicines', MedicineController::class)->except(['search']);
+        Route::post('/medicines/{medicine}/update', [MedicineController::class, 'update'])->name('medicines.update.post');
+        Route::post('/medicines/{medicine}/delete', [MedicineController::class, 'destroy'])->name('medicines.destroy.post');
+
+        // Unit Types
+        Route::resource('units', UnitTypeController::class)->except(['show']);
+        Route::post('/units/{unitType}/update', [UnitTypeController::class, 'update'])->name('units.update.post');
+        Route::post('/units/{unitType}/delete', [UnitTypeController::class, 'destroy'])->name('units.destroy.post');
+    });
 
     // Stock
     Route::resource('stock', StockController::class)->except(['show', 'destroy']);
@@ -45,12 +54,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/check-referral-number', function (\Illuminate\Http\Request $r) {
         $number = $r->get('number');
         $userId = auth()->id();
-        $exists = \App\Models\Invoice::where('referral_number', $number)->where('user_id', $userId)->exists()
-            || \App\Models\DispensedMedicine::where('referral_number', $number)->where('user_id', $userId)->exists();
+        $today = now()->format('Y-m-d');
+        $exists = \App\Models\Invoice::where('referral_number', $number)
+            ->where('user_id', $userId)
+            ->whereDate('created_at', $today)
+            ->exists()
+            || \App\Models\DispensedMedicine::where('referral_number', $number)
+                ->where('user_id', $userId)
+                ->whereDate('dispense_date', $today)
+                ->exists();
         if ($exists) {
-            $maxInv = (int) \App\Models\Invoice::where('user_id', $userId)->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) as m')->value('m');
-            $maxDM = (int) \App\Models\DispensedMedicine::where('user_id', $userId)->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) as m')->value('m');
-            return response()->json(['exists' => true, 'next_available' => max($maxInv, $maxDM) + 1]);
+            return response()->json(['exists' => true, 'message' => "الرقم \"{$number}\" مستخدم مسبقاً في هذا التاريخ"]);
         }
         return response()->json(['exists' => false]);
     })->name('check-referral-number');

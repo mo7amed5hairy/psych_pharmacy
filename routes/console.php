@@ -4,8 +4,14 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
 Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
+    $this->comment(Illuminate\Foundation\Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Artisan::command('dump-users', function () {
+    foreach (\App\Models\User::all() as $u) {
+        $this->info($u->name . ' => ' . $u->employee_code);
+    }
+});
 
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Cache;

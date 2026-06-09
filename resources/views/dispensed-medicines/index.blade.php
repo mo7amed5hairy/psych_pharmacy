@@ -10,9 +10,20 @@
         <div class="flex justify-between items-center mb-4">
             <h3 class="font-extrabold text-slate-900">تسجيل صرف أدوية</h3>
 
-            <button type="button" onclick="addDispensedRow()" class="btn btn-primary">
-                <i class="fas fa-plus"></i> إضافة صف
-            </button>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="addDispensedRow()" class="btn btn-primary" style="height:42px;">
+                    <i class="fas fa-plus"></i> إضافة صف
+                </button>
+
+                <div class="flex items-center gap-2 border-r border-slate-300 pr-3 ml-2">
+                    <input type="number" id="bulkRowCount" class="input"
+                        style="width:80px; height:42px; text-align:center; font-weight:bold;" value="0" min="1" max="50">
+                    <button type="button" onclick="addMultipleDispensedRows()" class="btn"
+                        style="height:42px; background:linear-gradient(135deg, #f59e0b, #d97706); color:white; border:none; padding: 0 15px; white-space: nowrap; font-weight:700; border-radius: 0.6rem; cursor:pointer;">
+                        أضف عدة صفوف
+                    </button>
+                </div>
+            </div>
         </div>
 
         <form method="POST" action="{{ route('dispensed-medicines.store') }}" id="dispensedForm" class="no-loader">
@@ -260,7 +271,7 @@
 
             toast.className =
                 `fixed top-5 right-5 px-4 py-3 rounded shadow-lg text-white z-50
-                            ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+                                                        ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
 
             toast.innerText = message;
 
@@ -307,11 +318,11 @@
                                     div.className = 'smart-search-item';
 
                                     div.innerHTML = `
-                                                    <div class="font-semibold">${med.name}</div>
-                                                    <div class="text-xs text-slate-500">
-                                                        ${med.unit_type?.name || ''} - سعر: ${med.price_hotline}
-                                                    </div>
-                                                `;
+                                                                                <div class="font-semibold">${med.name}</div>
+                                                                                <div class="text-xs text-slate-500">
+                                                                                    ${med.unit_type?.name || ''} - سعر: ${med.price_hotline}
+                                                                                </div>
+                                                                            `;
 
                                     div.onclick = () => selectMedicine(
                                         med,
@@ -403,6 +414,19 @@
             });
         }
 
+        function addMultipleDispensedRows() {
+            const count = parseInt(document.getElementById('bulkRowCount').value) || 1;
+            if (count > 50) {
+                alert('الحد الأقصى هو 50 صف في المرة الواحدة');
+                return;
+            }
+            if (count < 1) return;
+
+            for (let i = 0; i < count; i++) {
+                addDispensedRow();
+            }
+        }
+
         function addDispensedRow() {
 
             const index = dispensedRowCount++;
@@ -413,34 +437,37 @@
 
             row.className = 'grid grid-cols-1 md:grid-cols-12 gap-4 mb-2 dispensed-row';
 
+            const firstDateInput = document.querySelector('input[name="medicines[0][dispense_date]"]');
+            const inheritedDate = firstDateInput ? firstDateInput.value : '{{ date('Y-m-d') }}';
+
             row.innerHTML = `
 
-                            <div class="col-span-2">
-                                <input type="text" name="medicines[${index}][referral_number]" class="input referral-input">
-                            </div>
+                                                        <div class="col-span-2">
+                                                            <input type="text" name="medicines[${index}][referral_number]" class="input referral-input">
+                                                        </div>
 
-                            <div class="col-span-2">
-                                <input type="date" name="medicines[${index}][dispense_date]" class="input" value="{{ date('Y-m-d') }}" required>
-                            </div>
+                                                        <div class="col-span-2">
+                                                            <input type="date" name="medicines[${index}][dispense_date]" class="input" value="${inheritedDate}" required>
+                                                        </div>
 
-                            <div class="col-span-5">
-                                <div class="relative">
-                                    <input type="text" class="input medicine-search" placeholder="🔎 ابحث عن الدواء..." autocomplete="off">
-                                    <input type="hidden" name="medicines[${index}][medicine_id]" class="medicine-id">
-                                    <div class="smart-search-results"></div>
-                                </div>
-                            </div>
+                                                        <div class="col-span-5">
+                                                            <div class="relative">
+                                                                <input type="text" class="input medicine-search" placeholder="🔎 ابحث عن الدواء..." autocomplete="off">
+                                                                <input type="hidden" name="medicines[${index}][medicine_id]" class="medicine-id">
+                                                                <div class="smart-search-results"></div>
+                                                            </div>
+                                                        </div>
 
-                            <div class="col-span-2">
-                                <input type="number" name="medicines[${index}][quantity]" class="input" min="1" required>
-                            </div>
+                                                        <div class="col-span-2">
+                                                            <input type="number" name="medicines[${index}][quantity]" class="input" min="1" required>
+                                                        </div>
 
-                            <div class="col-span-1">
-                                <button type="button" onclick="removeDispensedRow(this)" class="btn btn-danger mt-2">
-                                    حذف
-                                </button>
-                            </div>
-                        `;
+                                                        <div class="col-span-1">
+                                                            <button type="button" onclick="removeDispensedRow(this)" class="btn btn-danger mt-2">
+                                                                حذف
+                                                            </button>
+                                                        </div>
+                                                    `;
 
             container.appendChild(row);
 
@@ -490,12 +517,6 @@
                     .forEach(r => r.classList.remove('active'));
             }
         });
-
-        $(document).ready(function () {
-            // Moved to app.js
-        });
-
-    </script>
 
     </script>
 @endpush

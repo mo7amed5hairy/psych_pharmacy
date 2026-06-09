@@ -49,12 +49,4 @@
 
         <!-- DataTable will handle pagination -->
     </div>
-
-    @push('scripts')
-        <script>
-            $(document).ready(function () {
-                // Moved to app.js
-            });
-        </script>
-    @endpush
 @endsection

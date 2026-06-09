@@ -166,18 +166,18 @@
                         medicineResults.innerHTML = '';
                         if (data.length === 0) {
                             medicineResults.innerHTML = `
-                                                                        <div class="smart-search-item text-slate-500">
-                                                                            <i class="fas fa-plus-circle ml-1"></i> "${query}" - اضغط Enter لإضافة دواء جديد
-                                                                        </div>
-                                                                    `;
+                                                                            <div class="smart-search-item text-slate-500">
+                                                                                <i class="fas fa-plus-circle ml-1"></i> "${query}" - اضغط Enter لإضافة دواء جديد
+                                                                            </div>
+                                                                        `;
                         } else {
                             data.forEach(med => {
                                 const div = document.createElement('div');
                                 div.className = 'smart-search-item';
                                 div.innerHTML = `
-                                                                            <div class="font-semibold">${med.name}</div>
-                                                                            <div class="text-xs text-slate-500">${med.unit_type?.name || ''} - سعر: ${med.price_hotline}</div>
-                                                                        `;
+                                                                                <div class="font-semibold">${med.name}</div>
+                                                                                <div class="text-xs text-slate-500">${med.unit_type?.name || ''} - سعر: ${med.price_hotline}</div>
+                                                                            `;
                                 div.onclick = () => selectMedicine(med);
                                 medicineResults.appendChild(div);
                             });
@@ -219,8 +219,5 @@
             document.getElementById('editStockModal').classList.add('hidden');
             document.getElementById('editStockModal').classList.remove('flex');
         }
-        $(document).ready(function () {
-            // Moved to app.js
-        });
     </script>
 @endpush

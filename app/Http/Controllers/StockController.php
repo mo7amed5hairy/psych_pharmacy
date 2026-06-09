@@ -40,20 +40,20 @@ class StockController extends Controller
             'stock_date' => 'required|date',
         ]);
 
-        $stock = Stock::firstOrCreate(
-            [
+        $stock = Stock::where('user_id', Auth::id())
+            ->where('medicine_id', $validated['medicine_id'])
+            ->where('stock_date', $validated['stock_date'])
+            ->first();
+
+        if ($stock) {
+            $stock->increment('quantity', $validated['quantity']);
+        } else {
+            Stock::create([
                 'user_id' => Auth::id(),
                 'medicine_id' => $validated['medicine_id'],
                 'stock_date' => $validated['stock_date'],
-            ],
-            [
                 'quantity' => $validated['quantity'],
-            ]
-        );
-
-        // If stock already exists, update quantity
-        if (!$stock->wasRecentlyCreated) {
-            $stock->update(['quantity' => $validated['quantity']]);
+            ]);
         }
 
         return redirect()->route('stock.index', ['stock_date' => $validated['stock_date']])->with('success', 'تم إضافة الرصيد بنجاح');

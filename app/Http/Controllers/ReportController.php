@@ -104,15 +104,15 @@ class ReportController extends Controller
 
                 if ($fromDate) {
                     $dmQuery->where('dispense_date', '>=', $fromDate);
-                    $invQuery->whereHas('invoice', fn($q) => $q->where('created_at', '>=', $fromDate));
+                    $invQuery->whereHas('invoice', fn($q) => $q->whereDate('created_at', '>=', $fromDate));
                 }
                 if ($toDate) {
                     $dmQuery->where('dispense_date', '<=', $toDate);
-                    $invQuery->whereHas('invoice', fn($q) => $q->where('created_at', '<=', $toDate . ' 23:59:59'));
+                    $invQuery->whereHas('invoice', fn($q) => $q->whereDate('created_at', '<=', $toDate));
                 }
 
-                $fromDispensed = $dmQuery->sum('quantity');
-                $fromInvoices = $invQuery->sum('quantity');
+                $fromDispensed = (int) $dmQuery->sum('quantity');
+                $fromInvoices = (int) $invQuery->sum('quantity');
 
                 $dispensed = $fromDispensed + $fromInvoices;
                 $opening = $stock->quantity + $dispensed;
