@@ -490,19 +490,26 @@
                                 <i class="fas fa-user-shield text-amber-500"></i><span>صلاحيات المستخدمين</span>
                             </a>
 
-                            <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}"
-                                onclick="showLoader()">
-                                <i class="fas fa-users-cog"></i><span>إدارة المستخدمين</span>
-                            </a>
+                            @if(auth()->user()->hasPermission('users'))
+                                <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}"
+                                    onclick="showLoader()">
+                                    <i class="fas fa-users-cog"></i><span>إدارة المستخدمين</span>
+                                </a>
+                            @endif
 
-                            <a href="{{ route('medicines.index') }}"
-                                class="{{ request()->routeIs('medicines.*') ? 'active' : '' }}" onclick="showLoader()">
-                                <i class="fas fa-book-medical"></i><span>قاموس الأدوية</span>
-                            </a>
-                            <a href="{{ route('units.index') }}" class="{{ request()->routeIs('units.*') ? 'active' : '' }}"
-                                onclick="showLoader()">
-                                <i class="fas fa-shapes"></i><span>أنواع الوحدات</span>
-                            </a>
+                            @if(auth()->user()->hasPermission('medicines'))
+                                <a href="{{ route('medicines.index') }}"
+                                    class="{{ request()->routeIs('medicines.*') ? 'active' : '' }}" onclick="showLoader()">
+                                    <i class="fas fa-book-medical"></i><span>قاموس الأدوية</span>
+                                </a>
+                            @endif
+
+                            @if(auth()->user()->hasPermission('units'))
+                                <a href="{{ route('units.index') }}" class="{{ request()->routeIs('units.*') ? 'active' : '' }}"
+                                    onclick="showLoader()">
+                                    <i class="fas fa-shapes"></i><span>أنواع الوحدات</span>
+                                </a>
+                            @endif
                         @endif
 
                         @if(auth()->user()->hasPermission('stock'))

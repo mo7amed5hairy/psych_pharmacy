@@ -36,21 +36,18 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/permissions', [\App\Http\Controllers\PermissionController::class, 'update'])->name('permissions.update');
     Route::get('/permissions/init', [\App\Http\Controllers\PermissionController::class, 'initTable']);
 
-    // Admin-only Routes
-    Route::middleware(['admin'])->group(function () {
-        // Users
-        Route::resource('users', UserController::class);
+    // Users
+    Route::resource('users', UserController::class)->middleware('permission:users');
 
-        // Medicines Management
-        Route::resource('medicines', MedicineController::class)->except(['search']);
-        Route::post('/medicines/{medicine}/update', [MedicineController::class, 'update'])->name('medicines.update.post');
-        Route::post('/medicines/{medicine}/delete', [MedicineController::class, 'destroy'])->name('medicines.destroy.post');
+    // Medicines Management
+    Route::resource('medicines', MedicineController::class)->except(['search'])->middleware('permission:medicines');
+    Route::post('/medicines/{medicine}/update', [MedicineController::class, 'update'])->name('medicines.update.post')->middleware('permission:medicines');
+    Route::post('/medicines/{medicine}/delete', [MedicineController::class, 'destroy'])->name('medicines.destroy.post')->middleware('permission:medicines');
 
-        // Unit Types
-        Route::resource('units', UnitTypeController::class)->except(['show']);
-        Route::post('/units/{unitType}/update', [UnitTypeController::class, 'update'])->name('units.update.post');
-        Route::post('/units/{unitType}/delete', [UnitTypeController::class, 'destroy'])->name('units.destroy.post');
-    });
+    // Unit Types
+    Route::resource('units', UnitTypeController::class)->except(['show'])->middleware('permission:units');
+    Route::post('/units/{unitType}/update', [UnitTypeController::class, 'update'])->name('units.update.post')->middleware('permission:units');
+    Route::post('/units/{unitType}/delete', [UnitTypeController::class, 'destroy'])->name('units.destroy.post')->middleware('permission:units');
 
     // Stock
     Route::resource('stock', StockController::class)->except(['show', 'destroy'])->middleware('permission:stock');
@@ -103,6 +100,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dispensed-medicines/create', [DispensedMedicineController::class, 'create'])->name('dispensed-medicines.create')->middleware('permission:dispensed_medicines');
     Route::post('/dispensed-medicines', [DispensedMedicineController::class, 'store'])->name('dispensed-medicines.store')->middleware('permission:dispensed_medicines');
     Route::post('/dispensed-medicines/{dispensed_medicine}/update', [DispensedMedicineController::class, 'update'])->name('dispensed-medicines.update')->middleware('permission:dispensed_medicines');
+    Route::delete('/dispensed-medicines/{dispensed_medicine}', [DispensedMedicineController::class, 'destroy'])->name('dispensed-medicines.destroy')->middleware('permission:dispensed_medicines');
 
     // Invoices
     Route::get('/invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print')->middleware('permission:invoice_list');
@@ -110,6 +108,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create')->middleware('permission:invoice_create');
     Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store')->middleware('permission:invoice_create');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show')->middleware('permission:invoice_list');
+    Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy')->middleware('permission:invoice_list');
 
     // Reports
     Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly')->middleware('permission:report_monthly');

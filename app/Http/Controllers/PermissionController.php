@@ -25,6 +25,9 @@ class PermissionController extends Controller
         $users = User::with('permissions')->get();
         $modules = [
             'dashboard' => 'الرئيسية',
+            'users' => 'إدارة المستخدمين',
+            'medicines' => 'قاموس الأدوية',
+            'units' => 'أنواع الوحدات',
             'stock' => 'أرصدة الأدوية(المخزن)',
             'dispensed_medicines' => 'الأدوية المنصرفة',
             'invoice_create' => 'إضافة فواتير صرف',
