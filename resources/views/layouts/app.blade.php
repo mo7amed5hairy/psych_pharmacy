@@ -476,69 +476,97 @@
                     </div>
                 </div>
                 <nav>
-                    <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}"
-                        onclick="showLoader()">
-                        <i class="fas fa-home"></i><span>الرئيسية</span>
-                    </a>
-                    @if(in_array(auth()->user()->employee_code, ['7777', '1010']))
-                        <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}"
-                            onclick="showLoader()">
-                            <i class="fas fa-users-cog"></i><span>إدارة المستخدمين</span>
-                        </a>
+                    <nav>
+                        @if(auth()->user()->hasPermission('dashboard'))
+                            <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                                onclick="showLoader()">
+                                <i class="fas fa-home"></i><span>الرئيسية</span>
+                            </a>
+                        @endif
 
-                        <a href="{{ route('medicines.index') }}" class="{{ request()->routeIs('medicines.*') ? 'active' : '' }}"
-                            onclick="showLoader()">
-                            <i class="fas fa-book-medical"></i><span>قاموس الأدوية</span>
-                        </a>
-                        <a href="{{ route('units.index') }}" class="{{ request()->routeIs('units.*') ? 'active' : '' }}"
-                            onclick="showLoader()">
-                            <i class="fas fa-shapes"></i><span>أنواع الوحدات</span>
-                        </a>
-                    @endif
-                    <a href="{{ route('stock.index') }}" class="{{ request()->routeIs('stock.*') ? 'active' : '' }}"
-                        onclick="showLoader()">
-                        <i class="fas fa-boxes"></i><span>أرصدة الأدوية</span>
-                    </a>
-                    <a href="{{ route('dispensed-medicines.index') }}"
-                        class="{{ request()->routeIs('dispensed-medicines.*') ? 'active' : '' }}" onclick="showLoader()">
-                        <i class="fas fa-pills"></i><span>الأدوية المنصرفة</span>
-                    </a>
+                        @if(in_array(auth()->user()->employee_code, ['7777', '1010']))
+                            <a href="{{ route('permissions.index') }}"
+                                class="{{ request()->routeIs('permissions.index') ? 'active' : '' }}" onclick="showLoader()">
+                                <i class="fas fa-user-shield text-amber-500"></i><span>صلاحيات المستخدمين</span>
+                            </a>
 
-                    <div class="sidebar-group-btn {{ request()->routeIs('invoices.*') ? 'open' : '' }}"
-                        onclick="toggleSidebarDropdown('invoices-menu')">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-file-invoice-dollar"></i><span>الفواتير</span>
-                        </div>
-                        <i class="fas fa-chevron-left chevron"></i>
-                    </div>
-                    <div id="invoices-menu" class="sidebar-dropdown {{ request()->routeIs('invoices.*') ? 'show' : '' }}">
-                        <a href="{{ route('invoices.create') }}"
-                            class="{{ request()->routeIs('invoices.create') ? 'active' : '' }}" onclick="showLoader()">
-                            <i class="fas fa-plus-circle"></i><span>إضافة فاتورة صرف</span>
-                        </a>
-                        <a href="{{ route('invoices.index') }}"
-                            class="{{ request()->routeIs('invoices.index') ? 'active' : '' }}" onclick="showLoader()">
-                            <i class="fas fa-list-ul"></i><span>قائمة الفواتير</span>
-                        </a>
-                    </div>
+                            <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}"
+                                onclick="showLoader()">
+                                <i class="fas fa-users-cog"></i><span>إدارة المستخدمين</span>
+                            </a>
 
-                    <a href="{{ route('reports.monthly') }}"
-                        class="{{ request()->routeIs('reports.monthly') ? 'active' : '' }}" onclick="showLoader()">
-                        <i class="fas fa-chart-bar"></i><span>كشف المنصرف</span>
-                    </a>
-                    <a href="{{ route('reports.inventory') }}"
-                        class="{{ request()->routeIs('reports.inventory') ? 'active' : '' }}" onclick="showLoader()">
-                        <i class="fas fa-clipboard-list"></i><span>الجرد</span>
-                    </a>
+                            <a href="{{ route('medicines.index') }}"
+                                class="{{ request()->routeIs('medicines.*') ? 'active' : '' }}" onclick="showLoader()">
+                                <i class="fas fa-book-medical"></i><span>قاموس الأدوية</span>
+                            </a>
+                            <a href="{{ route('units.index') }}" class="{{ request()->routeIs('units.*') ? 'active' : '' }}"
+                                onclick="showLoader()">
+                                <i class="fas fa-shapes"></i><span>أنواع الوحدات</span>
+                            </a>
+                        @endif
 
-                    <a href="{{ route('logout') }}"
-                        onclick="event.preventDefault(); showLoader(); document.getElementById('logout-form').submit();">
-                        <i class="fas fa-sign-out-alt"></i><span>تسجيل الخروج</span>
-                    </a>
-                </nav>
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
-                    @csrf
-                </form>
+                        @if(auth()->user()->hasPermission('stock'))
+                            <a href="{{ route('stock.index') }}" class="{{ request()->routeIs('stock.*') ? 'active' : '' }}"
+                                onclick="showLoader()">
+                                <i class="fas fa-boxes"></i><span>أرصدة الأدوية</span>
+                            </a>
+                        @endif
+
+                        @if(auth()->user()->hasPermission('dispensed_medicines'))
+                            <a href="{{ route('dispensed-medicines.index') }}"
+                                class="{{ request()->routeIs('dispensed-medicines.*') ? 'active' : '' }}"
+                                onclick="showLoader()">
+                                <i class="fas fa-pills"></i><span>الأدوية المنصرفة</span>
+                            </a>
+                        @endif
+
+                        @if(auth()->user()->hasPermission('invoice_create') || auth()->user()->hasPermission('invoice_list'))
+                            <div class="sidebar-group-btn {{ request()->routeIs('invoices.*') ? 'open' : '' }}"
+                                onclick="toggleSidebarDropdown('invoices-menu')">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-file-invoice-dollar"></i><span>الفواتير</span>
+                                </div>
+                                <i class="fas fa-chevron-left chevron"></i>
+                            </div>
+                            <div id="invoices-menu"
+                                class="sidebar-dropdown {{ request()->routeIs('invoices.*') ? 'show' : '' }}">
+                                @if(auth()->user()->hasPermission('invoice_create'))
+                                    <a href="{{ route('invoices.create') }}"
+                                        class="{{ request()->routeIs('invoices.create') ? 'active' : '' }}" onclick="showLoader()">
+                                        <i class="fas fa-plus-circle"></i><span>إضافة فاتورة صرف</span>
+                                    </a>
+                                @endif
+                                @if(auth()->user()->hasPermission('invoice_list'))
+                                    <a href="{{ route('invoices.index') }}"
+                                        class="{{ request()->routeIs('invoices.index') ? 'active' : '' }}" onclick="showLoader()">
+                                        <i class="fas fa-list-ul"></i><span>قائمة الفواتير</span>
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if(auth()->user()->hasPermission('report_monthly'))
+                            <a href="{{ route('reports.monthly') }}"
+                                class="{{ request()->routeIs('reports.monthly') ? 'active' : '' }}" onclick="showLoader()">
+                                <i class="fas fa-chart-bar"></i><span>كشف المنصرف</span>
+                            </a>
+                        @endif
+
+                        @if(auth()->user()->hasPermission('report_inventory'))
+                            <a href="{{ route('reports.inventory') }}"
+                                class="{{ request()->routeIs('reports.inventory') ? 'active' : '' }}" onclick="showLoader()">
+                                <i class="fas fa-clipboard-list"></i><span>الجرد</span>
+                            </a>
+                        @endif
+
+                        <a href="{{ route('logout') }}"
+                            onclick="event.preventDefault(); showLoader(); document.getElementById('logout-form').submit();">
+                            <i class="fas fa-sign-out-alt"></i><span>تسجيل الخروج</span>
+                        </a>
+                    </nav>
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+                        @csrf
+                    </form>
             </aside>
 
             <!-- Main Content -->
@@ -779,7 +807,7 @@
 
         }
 
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             const $ = window.jQuery;
 
             // Notification Bell Toggle

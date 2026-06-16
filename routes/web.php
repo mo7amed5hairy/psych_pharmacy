@@ -25,11 +25,16 @@ Route::middleware(['auth'])->group(function () {
     })->name('unauthorized');
 
     // Dashboard
-    Route::get('/index', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/index', [DashboardController::class, 'index'])->name('dashboard')->middleware('permission:dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:dashboard');
 
     // Medicines Search (Public for all pharmacists)
     Route::get('/medicines/search', [MedicineController::class, 'search'])->name('medicines.search');
+
+    // User Permissions Management (Esraa and Reem Only)
+    Route::get('/permissions', [\App\Http\Controllers\PermissionController::class, 'index'])->name('permissions.index');
+    Route::post('/permissions', [\App\Http\Controllers\PermissionController::class, 'update'])->name('permissions.update');
+    Route::get('/permissions/init', [\App\Http\Controllers\PermissionController::class, 'initTable']);
 
     // Admin-only Routes
     Route::middleware(['admin'])->group(function () {
@@ -48,38 +53,67 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Stock
-    Route::resource('stock', StockController::class)->except(['show', 'destroy']);
+    Route::resource('stock', StockController::class)->except(['show', 'destroy'])->middleware('permission:stock');
 
     // Referral Number Check
     Route::get('/check-referral-number', function (\Illuminate\Http\Request $r) {
+        $user = auth()->user();
+        if (!$user)
+            return response()->json(['exists' => false]);
+
+        // Relax restriction for everyone EXCEPT Hadeer (2222)
+        // Since this route is only used for Dispensed Medicines real-time check.
+        if ($user->employee_code !== '2222') {
+            return response()->json(['exists' => false]);
+        }
+
         $number = $r->get('number');
-        $userId = auth()->id();
-        $today = now()->format('Y-m-d');
-        $exists = \App\Models\Invoice::where('referral_number', $number)
+        $dateStr = $r->get('date');
+
+        try {
+            $date = $dateStr ? \Carbon\Carbon::parse($dateStr)->format('Y-m-d') : now()->format('Y-m-d');
+        } catch (\Exception $e) {
+            $date = now()->format('Y-m-d');
+        }
+
+        $userId = $user->id;
+
+        $invoiceExists = \App\Models\Invoice::where('referral_number', $number)
             ->where('user_id', $userId)
-            ->whereDate('created_at', $today)
-            ->exists()
-            || \App\Models\DispensedMedicine::where('referral_number', $number)
-                ->where('user_id', $userId)
-                ->whereDate('dispense_date', $today)
-                ->exists();
-        if ($exists) {
-            return response()->json(['exists' => true, 'message' => "الرقم \"{$number}\" مستخدم مسبقاً في هذا التاريخ"]);
+            ->whereDate('created_at', $date)
+            ->exists();
+
+        $dispensedExists = \App\Models\DispensedMedicine::where('referral_number', $number)
+            ->where('user_id', $userId)
+            ->whereDate('dispense_date', $date)
+            ->exists();
+
+        if ($invoiceExists || $dispensedExists) {
+            $type = $invoiceExists ? 'فاتورة' : 'صرفية';
+            return response()->json([
+                'exists' => true,
+                'message' => "الرقم \"{$number}\" مستخدم مسبقاً في {$type} بتاريخ {$date}"
+            ]);
         }
         return response()->json(['exists' => false]);
     })->name('check-referral-number');
 
     // Dispensed Medicines
-    Route::resource('dispensed-medicines', DispensedMedicineController::class)->except(['show', 'edit', 'update']);
-    Route::post('/dispensed-medicines/{dispensed_medicine}/update', [DispensedMedicineController::class, 'update'])->name('dispensed-medicines.update');
+    Route::get('/dispensed-medicines', [DispensedMedicineController::class, 'index'])->name('dispensed-medicines.index')->middleware('permission:dispensed_medicines');
+    Route::get('/dispensed-medicines/create', [DispensedMedicineController::class, 'create'])->name('dispensed-medicines.create')->middleware('permission:dispensed_medicines');
+    Route::post('/dispensed-medicines', [DispensedMedicineController::class, 'store'])->name('dispensed-medicines.store')->middleware('permission:dispensed_medicines');
+    Route::post('/dispensed-medicines/{dispensed_medicine}/update', [DispensedMedicineController::class, 'update'])->name('dispensed-medicines.update')->middleware('permission:dispensed_medicines');
 
     // Invoices
-    Route::get('/invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
-    Route::resource('invoices', InvoiceController::class);
+    Route::get('/invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print')->middleware('permission:invoice_list');
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index')->middleware('permission:invoice_list');
+    Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create')->middleware('permission:invoice_create');
+    Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store')->middleware('permission:invoice_create');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show')->middleware('permission:invoice_list');
 
     // Reports
-    Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
-    Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
+    Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly')->middleware('permission:report_monthly');
+    Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory')->middleware('permission:report_inventory');
 
     // Notifications
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');

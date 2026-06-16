@@ -94,7 +94,13 @@ class ReportController extends Controller
         }
 
         $inventory = $query->get()
-            ->map(function ($stock) use ($fromDate, $toDate) {
+            ->groupBy('medicine_id')
+            ->map(function ($stocks) use ($fromDate, $toDate) {
+                // Take the first stock record as a base to keep medicine/user relations
+                $stock = $stocks->first();
+                // Sum the quantities of all stock records in this group
+                $stock->quantity = $stocks->sum('quantity');
+
                 $dmQuery = DispensedMedicine::where('medicine_id', $stock->medicine_id)
                     ->where('user_id', $stock->user_id);
                 $invQuery = InvoiceItem::where('medicine_id', $stock->medicine_id)
@@ -120,7 +126,7 @@ class ReportController extends Controller
                 $stock->opening = $opening;
                 $stock->remaining = $opening - $dispensed;
                 return $stock;
-            });
+            })->values();
 
         $totals = [
             'total_stock' => $inventory->sum('opening'),

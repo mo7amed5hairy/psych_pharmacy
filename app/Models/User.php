@@ -17,6 +17,24 @@ class User extends Authenticatable
         'password_hash',
     ];
 
+    public function permissions(): HasMany
+    {
+        return $this->hasMany(UserPermission::class);
+    }
+
+    public function hasPermission(string $module): bool
+    {
+        // Hardcoded admins Esraa (7777) and Reem (1010) have all permissions by default
+        if (in_array($this->employee_code, ['7777', '1010'])) {
+            return true;
+        }
+
+        return $this->permissions()
+            ->where('module', $module)
+            ->where('is_granted', true)
+            ->exists();
+    }
+
     protected $hidden = [
         'password_hash',
         'remember_token',

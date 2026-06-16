@@ -172,27 +172,23 @@
 
             // Check all referral numbers for duplicates
             const refInputs = document.querySelectorAll('.referral-input');
-            const refsToCheck = [];
             for (let inp of refInputs) {
                 const val = inp.value.trim();
-                if (val) refsToCheck.push(val);
-            }
+                if (!val) continue;
 
-            if (refsToCheck.length > 0) {
-                for (let ref of refsToCheck) {
-                    try {
-                        const resp = await fetch('{{ url('/check-referral-number') }}?number=' + encodeURIComponent(ref));
-                        const data = await resp.json();
-                        if (data.exists) {
-                            const msg = data.next_available
-                                ? `⚠ الرقم "${ref}" مستخدم من قبل — الرقم التالي المتاح: ${data.next_available}`
-                                : `⚠ الرقم "${ref}" مستخدم من قبل`;
-                            showToast(msg, 'error');
-                            return;
-                        }
-                    } catch (e) {
-                        // ignore network error, proceed anyway
+                const dateInput = inp.closest('.dispensed-row').querySelector('input[type="date"]');
+                const date = dateInput ? dateInput.value : '';
+
+                try {
+                    const resp = await fetch(`{{ url('/check-referral-number') }}?number=${encodeURIComponent(val)}&date=${date}`);
+                    const data = await resp.json();
+                    if (data.exists) {
+                        showToast(data.message || `⚠ الرقم "${val}" مستخدم من قبل`, 'error');
+                        inp.style.borderColor = 'red';
+                        return; // Stop submission
                     }
+                } catch (e) {
+                    // ignore network error
                 }
             }
 
@@ -271,7 +267,7 @@
 
             toast.className =
                 `fixed top-5 right-5 px-4 py-3 rounded shadow-lg text-white z-50
-                                                        ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+                                                            ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
 
             toast.innerText = message;
 
@@ -318,11 +314,11 @@
                                     div.className = 'smart-search-item';
 
                                     div.innerHTML = `
-                                                                                <div class="font-semibold">${med.name}</div>
-                                                                                <div class="text-xs text-slate-500">
-                                                                                    ${med.unit_type?.name || ''} - سعر: ${med.price_hotline}
-                                                                                </div>
-                                                                            `;
+                                                                                    <div class="font-semibold">${med.name}</div>
+                                                                                    <div class="text-xs text-slate-500">
+                                                                                        ${med.unit_type?.name || ''} - سعر: ${med.price_hotline}
+                                                                                    </div>
+                                                                                `;
 
                                     div.onclick = () => selectMedicine(
                                         med,
@@ -397,21 +393,33 @@
                 const val = this.value.trim();
                 if (!val) return;
                 checkTimeout = setTimeout(() => {
-                    fetch('{{ url('/check-referral-number') }}?number=' + encodeURIComponent(val))
+                    const dateInput = input.closest('.dispensed-row').querySelector('input[type="date"]');
+                    const date = dateInput ? dateInput.value : '';
+                    fetch(`{{ url('/check-referral-number') }}?number=${encodeURIComponent(val)}&date=${date}`)
                         .then(r => r.json())
                         .then(d => {
                             if (d.exists) {
-                                const msg = d.next_available
-                                    ? `⚠ الرقم "${val}" مستخدم من قبل — الرقم التالي المتاح: ${d.next_available}`
-                                    : `⚠ الرقم "${val}" مستخدم من قبل`;
+                                const msg = d.message || `⚠ الرقم "${val}" مستخدم من قبل`;
                                 showToast(msg, 'error');
                                 input.dataset.duplicate = 'true';
+                                input.style.borderColor = 'red';
                             } else {
                                 input.dataset.duplicate = '';
+                                input.style.borderColor = '';
                             }
                         });
                 }, 400);
             });
+
+            // Re-validate when date changes
+            const dateInput = input.closest('.dispensed-row').querySelector('input[type="date"]');
+            if (dateInput) {
+                dateInput.addEventListener('change', () => {
+                    if (input.value.trim()) {
+                        input.dispatchEvent(new Event('blur'));
+                    }
+                });
+            }
         }
 
         function addMultipleDispensedRows() {
@@ -442,32 +450,32 @@
 
             row.innerHTML = `
 
-                                                        <div class="col-span-2">
-                                                            <input type="text" name="medicines[${index}][referral_number]" class="input referral-input">
-                                                        </div>
-
-                                                        <div class="col-span-2">
-                                                            <input type="date" name="medicines[${index}][dispense_date]" class="input" value="${inheritedDate}" required>
-                                                        </div>
-
-                                                        <div class="col-span-5">
-                                                            <div class="relative">
-                                                                <input type="text" class="input medicine-search" placeholder="🔎 ابحث عن الدواء..." autocomplete="off">
-                                                                <input type="hidden" name="medicines[${index}][medicine_id]" class="medicine-id">
-                                                                <div class="smart-search-results"></div>
+                                                            <div class="col-span-2">
+                                                                <input type="text" name="medicines[${index}][referral_number]" class="input referral-input">
                                                             </div>
-                                                        </div>
 
-                                                        <div class="col-span-2">
-                                                            <input type="number" name="medicines[${index}][quantity]" class="input" min="1" required>
-                                                        </div>
+                                                            <div class="col-span-2">
+                                                                <input type="date" name="medicines[${index}][dispense_date]" class="input" value="${inheritedDate}" required>
+                                                            </div>
 
-                                                        <div class="col-span-1">
-                                                            <button type="button" onclick="removeDispensedRow(this)" class="btn btn-danger mt-2">
-                                                                حذف
-                                                            </button>
-                                                        </div>
-                                                    `;
+                                                            <div class="col-span-5">
+                                                                <div class="relative">
+                                                                    <input type="text" class="input medicine-search" placeholder="🔎 ابحث عن الدواء..." autocomplete="off">
+                                                                    <input type="hidden" name="medicines[${index}][medicine_id]" class="medicine-id">
+                                                                    <div class="smart-search-results"></div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-span-2">
+                                                                <input type="number" name="medicines[${index}][quantity]" class="input" min="1" required>
+                                                            </div>
+
+                                                            <div class="col-span-1">
+                                                                <button type="button" onclick="removeDispensedRow(this)" class="btn btn-danger mt-2">
+                                                                    حذف
+                                                                </button>
+                                                            </div>
+                                                        `;
 
             container.appendChild(row);
 
