@@ -67,6 +67,132 @@ class ReportController extends Controller
     }
 
 
+    public function daily(Request $request)
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $userId = auth()->id();
+
+        $dmData = DispensedMedicine::select(
+            'medicine_id',
+            'referral_number',
+            DB::raw('SUM(quantity) as total_quantity')
+        )
+            ->whereDate('dispense_date', $date)
+            ->where('user_id', $userId)
+            ->groupBy('medicine_id', 'referral_number')
+            ->get();
+
+        $invData = InvoiceItem::select(
+            'invoice_items.medicine_id',
+            'invoices.referral_number',
+            DB::raw('SUM(invoice_items.quantity) as total_quantity')
+        )
+            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->whereDate('invoices.created_at', $date)
+            ->where('invoices.user_id', $userId)
+            ->groupBy('invoice_items.medicine_id', 'invoices.referral_number')
+            ->get();
+
+        $allData = $dmData->concat($invData);
+
+        $referralNumbers = $allData->pluck('referral_number')
+            ->filter()
+            ->unique()
+            ->sort(function ($a, $b) {
+                return (int) $a - (int) $b;
+            })
+            ->values();
+
+        $medicineIds = $allData->pluck('medicine_id')->unique();
+        $medicines = Medicine::whereIn('id', $medicineIds)->get()->keyBy('id');
+
+        $pivot = [];
+        foreach ($allData as $item) {
+            $medId = $item->medicine_id;
+            $refNum = $item->referral_number ?? '_none';
+            $pivot[$medId][$refNum] = ($pivot[$medId][$refNum] ?? 0) + $item->total_quantity;
+        }
+
+        return view('reports.daily', compact('pivot', 'medicines', 'referralNumbers', 'date', 'userId'));
+    }
+
+
+    public function clinic(Request $request)
+    {
+        $month = $request->get('month', now()->month);
+        $year = $request->get('year', now()->year);
+        $userId = auth()->id();
+
+        $dmData = DispensedMedicine::select(
+            'medicine_id',
+            'dispense_date',
+            'referral_number',
+            DB::raw('SUM(quantity) as total_quantity')
+        )
+            ->whereMonth('dispense_date', $month)
+            ->whereYear('dispense_date', $year)
+            ->where('user_id', $userId)
+            ->groupBy('medicine_id', 'dispense_date', 'referral_number')
+            ->get();
+
+        $invData = InvoiceItem::select(
+            'invoice_items.medicine_id',
+            DB::raw('DATE(invoices.created_at) as dispense_date'),
+            'invoices.referral_number',
+            DB::raw('SUM(invoice_items.quantity) as total_quantity')
+        )
+            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->whereMonth('invoices.created_at', $month)
+            ->whereYear('invoices.created_at', $year)
+            ->where('invoices.user_id', $userId)
+            ->groupBy('invoice_items.medicine_id', DB::raw('DATE(invoices.created_at)'), 'invoices.referral_number')
+            ->get();
+
+        $allData = $dmData->concat($invData);
+
+        // Group by medicine to get total quantities
+        $medicineQuantities = [];
+        $dates = collect();
+        $referralNumbers = collect();
+
+        foreach ($allData as $item) {
+            $medId = $item->medicine_id;
+            $medicineQuantities[$medId] = ($medicineQuantities[$medId] ?? 0) + $item->total_quantity;
+            if ($item->dispense_date) {
+                $dates->push($item->dispense_date);
+            }
+            if ($item->referral_number) {
+                $referralNumbers->push($item->referral_number);
+            }
+        }
+
+        $medicineIds = array_keys($medicineQuantities);
+        $medicines = Medicine::with('unitType')->whereIn('id', $medicineIds)->get();
+
+        $reportRows = [];
+        $grandTotal = 0;
+
+        foreach ($medicines as $med) {
+            $qty = $medicineQuantities[$med->id] ?? 0;
+            $unitPrice = (float) ($med->price_clinic ?? 0);
+            $total = $qty * $unitPrice;
+            $grandTotal += $total;
+            $reportRows[] = (object) [
+                'name' => $med->name,
+                'unit' => $med->unitType->name ?? '',
+                'unit_price' => $unitPrice,
+                'quantity' => $qty,
+                'total' => $total,
+            ];
+        }
+
+        $daysCount = $dates->unique()->count();
+        $ticketsCount = $referralNumbers->unique()->count();
+
+        return view('reports.clinic', compact('reportRows', 'grandTotal', 'daysCount', 'ticketsCount', 'month', 'year', 'userId'));
+    }
+
+
     public function inventory(Request $request)
     {
         $fromDate = $request->get('from_date');

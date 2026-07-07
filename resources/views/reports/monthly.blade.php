@@ -110,6 +110,19 @@
 
 @push('scripts')
     <script>
+        // Enter key navigation
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' || (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON')) return;
+            if (e.target.tagName === 'BUTTON') return;
+            e.preventDefault();
+            const scope = document.querySelector('main') || document;
+            const focusable = Array.from(scope.querySelectorAll('input:not([readonly]), select:not([disabled]), button:not([disabled])'));
+            const idx = focusable.indexOf(e.target);
+            if (idx > -1 && idx < focusable.length - 1) {
+                focusable[idx + 1].focus();
+            }
+        });
+
         function printReport() {
             const printWindow = window.open('', '_blank');
             const monthYear = '{{ $monthName }} {{ $year }}';

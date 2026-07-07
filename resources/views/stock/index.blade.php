@@ -191,6 +191,8 @@
             medicineSearch.value = medicine.name;
             medicineId.value = medicine.id;
             medicineResults.classList.remove('active');
+            const qty = document.querySelector('input[name="quantity"]');
+            if (qty) qty.focus();
         }
 
         // Add new medicine on Enter if not found
@@ -219,5 +221,29 @@
             document.getElementById('editStockModal').classList.add('hidden');
             document.getElementById('editStockModal').classList.remove('flex');
         }
+
+        // Enter key navigation
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' || (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON')) return;
+            if (e.target.tagName === 'INPUT') {
+                const results = e.target.parentElement?.querySelector('.smart-search-results');
+                if (results?.classList.contains('active') && results.children.length > 0) {
+                    const first = results.querySelector('.smart-search-item');
+                    if (first && !first.textContent.includes('اضغط Enter')) {
+                        first.click();
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            }
+            if (e.target.tagName === 'BUTTON') return;
+            e.preventDefault();
+            const scope = document.querySelector('main') || document;
+            const focusable = Array.from(scope.querySelectorAll('input:not([readonly]):not([type="hidden"]), button:not([disabled])'));
+            const idx = focusable.indexOf(e.target);
+            if (idx > -1 && idx < focusable.length - 1) {
+                focusable[idx + 1].focus();
+            }
+        });
     </script>
 @endpush

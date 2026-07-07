@@ -137,6 +137,30 @@
             }
         });
 
+        // Enter key navigation
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' || (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON')) return;
+            if (e.target.tagName === 'INPUT') {
+                const results = e.target.parentElement?.querySelector('.smart-search-results');
+                if (results?.classList.contains('active') && results.children.length > 0) {
+                    const first = results.querySelector('.smart-search-item');
+                    if (first && !first.textContent.includes('لا يوجد')) {
+                        first.click();
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            }
+            if (e.target.tagName === 'BUTTON') return;
+            e.preventDefault();
+            const scope = document.querySelector('main') || document;
+            const focusable = Array.from(scope.querySelectorAll('input:not([readonly]):not([type="hidden"]), button:not([disabled])'));
+            const idx = focusable.indexOf(e.target);
+            if (idx > -1 && idx < focusable.length - 1) {
+                focusable[idx + 1].focus();
+            }
+        });
+
         function printInventory() {
             const printWindow = window.open('', '_blank');
             const fromDate = '{{ $fromDate }}';

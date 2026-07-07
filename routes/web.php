@@ -109,9 +109,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store')->middleware('permission:invoice_create');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show')->middleware('permission:invoice_list');
     Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy')->middleware('permission:invoice_list');
+    Route::post('/invoices/{invoice}/update', [InvoiceController::class, 'update'])->name('invoices.update')->middleware('permission:invoice_list');
 
     // Reports
     Route::get('/reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly')->middleware('permission:report_monthly');
+    Route::get('/reports/daily', [ReportController::class, 'daily'])->name('reports.daily')->middleware('permission:report_monthly');
+    Route::get('/reports/clinic', [ReportController::class, 'clinic'])->name('reports.clinic')->middleware('permission:report_monthly');
     Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory')->middleware('permission:report_inventory');
 
     // Notifications

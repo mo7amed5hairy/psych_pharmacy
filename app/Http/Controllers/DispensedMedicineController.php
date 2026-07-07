@@ -47,63 +47,13 @@ class DispensedMedicineController extends Controller
             'medicines.*.referral_number' => 'nullable|string|max:50',
         ]);
 
-        // Check duplicates BEFORE transaction (Strict mode only for Hadeer 2222)
-        if (Auth::user()->employee_code === '2222') {
-            $usedRefs = [];
-            foreach ($validated['medicines'] as $item) {
-                $ref = $item['referral_number'] ?? null;
-                if (!$ref)
-                    continue;
-                if (in_array($ref, $usedRefs)) {
-                    return response()->json(['status' => 'error', 'message' => "الرقم \"{$ref}\" مكرر في نفس الطلب"], 422);
-                }
-                $usedRefs[] = $ref;
-                $existsOriginal = \App\Models\Invoice::where('referral_number', $ref)
-                    ->where('user_id', Auth::id())
-                    ->whereDate('created_at', $item['dispense_date'])
-                    ->exists()
-                    || \App\Models\DispensedMedicine::where('referral_number', $ref)
-                        ->where('user_id', Auth::id())
-                        ->whereDate('dispense_date', $item['dispense_date'])
-                        ->exists();
-
-                if ($existsOriginal) {
-                    return response()->json(['status' => 'error', 'message' => "الرقم \"{$ref}\" مستخدم مسبقاً في هذا التاريخ (لمنع التكرار في نفس اليوم)"], 422);
-                }
-            }
-        }
-
         DB::beginTransaction();
 
         try {
 
-            /**
-             * 1) دمج التكرار (same medicine + same date)
-             */
-            $merged = [];
-
-            foreach ($validated['medicines'] as $item) {
-
-                $key = $item['medicine_id'] . '_' . $item['dispense_date'];
-
-                if (!isset($merged[$key])) {
-
-                    $merged[$key] = $item;
-
-                } else {
-
-                    // دمج الكميات + الحفاظ على أول referral لو موجود
-                    $merged[$key]['quantity'] += $item['quantity'];
-
-                    if (empty($merged[$key]['referral_number']) && !empty($item['referral_number'])) {
-                        $merged[$key]['referral_number'] = $item['referral_number'];
-                    }
-                }
-            }
-
             $successCount = 0;
 
-            foreach ($merged as $item) {
+            foreach ($validated['medicines'] as $item) {
 
                 /**
                  * 2) هات الدواء
@@ -200,27 +150,6 @@ class DispensedMedicineController extends Controller
 
             $validated = $validator->validated();
             $item = $validated['medicines'][0];
-
-            // Check duplicate (exclude current record, but restricted to same date) - Strict mode only for Hadeer 2222
-            $ref = $item['referral_number'] ?? null;
-            if ($ref && Auth::user()->employee_code === '2222') {
-                $exists = \App\Models\Invoice::where('referral_number', $ref)
-                    ->where('user_id', Auth::id())
-                    ->whereDate('created_at', $item['dispense_date'])
-                    ->exists()
-                    || \App\Models\DispensedMedicine::where('referral_number', $ref)
-                        ->where('user_id', Auth::id())
-                        ->whereDate('dispense_date', $item['dispense_date'])
-                        ->where('id', '!=', $id)
-                        ->exists();
-
-                if ($exists) {
-                    $maxInv = (int) \App\Models\Invoice::where('user_id', Auth::id())->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) as m')->value('m');
-                    $maxDM = (int) \App\Models\DispensedMedicine::where('user_id', Auth::id())->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) as m')->value('m');
-                    $next = max($maxInv, $maxDM) + 1;
-                    return response()->json(['status' => 'error', 'message' => "الرقم \"{$ref}\" مستخدم مسبقاً في هذا التاريخ — الرقم التالي المتاح: {$next}"], 422);
-                }
-            }
 
             DB::transaction(function () use ($dispensed, $item) {
 

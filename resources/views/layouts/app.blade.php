@@ -445,6 +445,10 @@
         .dataTables_length select {
             padding: 0px !important;
         }
+
+        .dataTables_filter {
+            margin-bottom: 1rem !important;
+        }
     </style>
     @stack('styles')
 </head>
@@ -553,10 +557,28 @@
                         @endif
 
                         @if(auth()->user()->hasPermission('report_monthly'))
-                            <a href="{{ route('reports.monthly') }}"
-                                class="{{ request()->routeIs('reports.monthly') ? 'active' : '' }}" onclick="showLoader()">
-                                <i class="fas fa-chart-bar"></i><span>كشف المنصرف</span>
-                            </a>
+                            <div class="sidebar-group-btn {{ request()->routeIs('reports.*') ? 'open' : '' }}"
+                                onclick="toggleSidebarDropdown('reports-menu')">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-chart-bar"></i><span>كشف المنصرف</span>
+                                </div>
+                                <i class="fas fa-chevron-left chevron"></i>
+                            </div>
+                            <div id="reports-menu"
+                                class="sidebar-dropdown {{ request()->routeIs('reports.*') ? 'show' : '' }}">
+                                <a href="{{ route('reports.monthly') }}"
+                                    class="{{ request()->routeIs('reports.monthly') ? 'active' : '' }}" onclick="showLoader()">
+                                    <i class="fas fa-calendar-alt"></i><span>شهري</span>
+                                </a>
+                                <a href="{{ route('reports.daily') }}"
+                                    class="{{ request()->routeIs('reports.daily') ? 'active' : '' }}" onclick="showLoader()">
+                                    <i class="fas fa-calendar-day"></i><span>يومي</span>
+                                </a>
+                                <a href="{{ route('reports.clinic') }}"
+                                    class="{{ request()->routeIs('reports.clinic') ? 'active' : '' }}" onclick="showLoader()">
+                                    <i class="fas fa-clinic-medical"></i><span>منصرف العيادة</span>
+                                </a>
+                            </div>
                         @endif
 
                         @if(auth()->user()->hasPermission('report_inventory'))

@@ -26,7 +26,8 @@ const arabicTranslation = {
 $.extend(true, $.fn.dataTable.defaults, {
     language: arabicTranslation,
     responsive: true,
-    pageLength: 10
+    pageLength: 10,
+    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'الكل']]
 });
 
 // Auto-initialize DataTables for all .data-table elements
