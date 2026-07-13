@@ -109,7 +109,7 @@
                                 {{ $remaining }}
                             </td>
                             <td>
-                                <button onclick="editStock({{ $item->id }}, {{ $item->quantity }})" class="btn btn-ghost">
+                                <button onclick="editStock({{ $item->id }}, {{ $item->quantity }}, {{ $dispensed }})" class="btn btn-ghost">
                                     <i class="fas fa-edit"></i>
                                 </button>
                             </td>
@@ -131,8 +131,12 @@
             <form id="editStockForm" method="POST">
                 @csrf
                 @method('PUT')
-                <label class="label">الكمية</label>
-                <input type="number" name="quantity" id="editStockQuantity" class="input mb-4" min="0" required>
+                <label class="label">رصيد أول الشهر</label>
+                <input type="number" id="editStockOpening" class="input mb-3" min="0" oninput="calcRemaining()">
+                <label class="label">المنصرف</label>
+                <input type="number" id="editStockDispensed" class="input mb-3" min="0" oninput="calcRemaining()">
+                <label class="label">المتبقى</label>
+                <input type="number" name="quantity" id="editStockQuantity" class="input mb-4" min="0" readonly style="background:#f1f5f9;">
                 <div class="flex gap-2">
                     <button type="button" onclick="closeStockModal()" class="btn btn-ghost flex-1">إلغاء</button>
                     <button type="submit" class="btn btn-success flex-1">حفظ</button>
@@ -210,11 +214,21 @@
             }
         });
 
-        function editStock(id, quantity) {
-            document.getElementById('editStockQuantity').value = quantity;
+        function editStock(id, remaining, dispensed) {
+            const opening = remaining + dispensed;
+            document.getElementById('editStockOpening').value = opening;
+            document.getElementById('editStockDispensed').value = dispensed;
+            document.getElementById('editStockQuantity').value = remaining;
             document.getElementById('editStockForm').action = '{{ url('/stock') }}' + '/' + id;
             document.getElementById('editStockModal').classList.remove('hidden');
             document.getElementById('editStockModal').classList.add('flex');
+        }
+
+        function calcRemaining() {
+            const opening = parseInt(document.getElementById('editStockOpening').value) || 0;
+            const dispensed = parseInt(document.getElementById('editStockDispensed').value) || 0;
+            const remaining = Math.max(0, opening - dispensed);
+            document.getElementById('editStockQuantity').value = remaining;
         }
 
         function closeStockModal() {

@@ -545,7 +545,7 @@
             if (e.target.tagName === 'BUTTON') return;
             e.preventDefault();
             const scope = document.querySelector('main') || document;
-            const focusable = Array.from(scope.querySelectorAll('input:not([readonly]):not([type="hidden"]), button:not([disabled])'));
+            const focusable = Array.from(scope.querySelectorAll('input:not([readonly]):not([type="hidden"]), button:not([disabled]):not(.btn-danger)'));
             const idx = focusable.indexOf(e.target);
             if (idx > -1 && idx < focusable.length - 1) {
                 focusable[idx + 1].focus();

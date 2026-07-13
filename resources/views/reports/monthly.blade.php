@@ -20,7 +20,7 @@
         12 => 'ديسمبر'
     ];
     $monthName = isset($month) ? ($arabicMonths[(int) $month] ?? $month) : '';
-    $colsCount = count($referralNumbers) + 2;
+    $colsCount = count($dates) + 2;
 @endphp
 
 @section('content')
@@ -70,18 +70,19 @@
             </div>
         </div>
 
-        <div class="table-wrap">
-            <table class="data data-table" id="monthlyTable">
+        <div class="table-wrap" style="overflow-x:auto;">
+            <table class="data" id="monthlyTable">
                 <thead>
                     <tr>
                         <th>الصنف</th>
-                        @foreach($referralNumbers as $refNum)
-                            <th class="text-center">{{ $refNum }}</th>
+                        @foreach($dates as $day)
+                            <th class="text-center">{{ $day->label }}</th>
                         @endforeach
                         <th class="text-center font-bold">الإجمالي</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @php $grandTotal = 0; @endphp
                     @foreach($medicines as $medicine)
                         @php
                             $total = 0;
@@ -89,9 +90,9 @@
                         @endphp
                         <tr>
                             <td class="font-semibold">{{ $medicine->name }}</td>
-                            @foreach($referralNumbers as $refNum)
+                            @foreach($dates as $day)
                                 @php
-                                    $qty = $medPivot[$refNum] ?? 0;
+                                    $qty = $medPivot[$day->date] ?? 0;
                                     $total += $qty;
                                 @endphp
                                 <td class="text-center {{ $qty > 0 ? 'font-semibold' : 'text-slate-300' }}">
@@ -99,10 +100,17 @@
                                 </td>
                             @endforeach
                             <td class="text-center font-bold text-sky-700">{{ $total }}</td>
+                            @php $grandTotal += $total; @endphp
                         </tr>
                     @endforeach
 
                 </tbody>
+                <tfoot class="bg-slate-100 font-bold">
+                    <tr>
+                        <td colspan="{{ count($dates) + 1 }}" class="text-left text-sm">الإجمالي العام</td>
+                        <td class="text-center font-bold text-sky-800">{{ $grandTotal }}</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
@@ -110,6 +118,36 @@
 
 @push('scripts')
     <script>
+        (function initMonthlyTable() {
+            if (typeof $ === 'undefined' || typeof $.fn.DataTable === 'undefined' || typeof $('#monthlyTable').DataTable !== 'function') {
+                setTimeout(initMonthlyTable, 50);
+                return;
+            }
+            $('#monthlyTable').DataTable({
+                responsive: false,
+                paging: true,
+                pageLength: 10,
+                searching: false,
+                info: true,
+                autoWidth: false,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'الكل']],
+                language: {
+                    "sProcessing": "جاري التحميل...",
+                    "sLengthMenu": "أظهر _MENU_ مدخلات",
+                    "sZeroRecords": "لم يعثر على أية سجلات",
+                    "sInfo": "إظهار _START_ إلى _END_ من أصل _TOTAL_ مدخل",
+                    "sInfoEmpty": "يعرض 0 إلى 0 من أصل 0 سجل",
+                    "sInfoFiltered": "(منتقاة من مجموع _MAX_ مُدخل)",
+                    "oPaginate": {
+                        "sFirst": "الأول",
+                        "sPrevious": "السابق",
+                        "sNext": "التالي",
+                        "sLast": "الأخير"
+                    }
+                }
+            });
+        })();
+
         // Enter key navigation
         document.addEventListener('keydown', function (e) {
             if (e.key !== 'Enter' || (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON')) return;
@@ -128,44 +166,55 @@
             const monthYear = '{{ $monthName }} {{ $year }}';
             const user = '{{ auth()->user()->name }} ({{ auth()->user()->employee_code }})';
 
+            const table = document.getElementById('monthlyTable');
+            // Clean DataTable-injected widths from thead cells
+            const thead = table.querySelector('thead').cloneNode(true);
+            thead.querySelectorAll('th').forEach(th => {
+                th.style.width = '';
+                th.style.minWidth = '';
+            });
+            const theadHtml = thead.innerHTML;
+            const tbodyHtml = table.querySelector('tbody').innerHTML;
+            let tfootHtml = '';
+            const tfoot = table.querySelector('tfoot');
+            if (tfoot) tfootHtml = tfoot.innerHTML;
+
             printWindow.document.write(`
-                                                                        <!DOCTYPE html>
-                                                                        <html dir="rtl">
-                                                                        <head>
-                                                                            <meta charset="utf-8">
-                                                                            <title>كشف المنصرف الشهري</title>
-                                                                            <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-                                                                            <style>
-                                                                                * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
-                                                                                body { padding: 15px; }
-                                                                                h1 { text-align: center; margin-bottom: 5px; margin-top:0;}
-                                                                                .info { text-align: center; margin-bottom: 15px; color: #666; font-size: 12px; }
-                                                                                table { width: 30% !important; margin: 0 auto; border-collapse: collapse; font-size: .7rem !important; table-layout: auto; }
-                                                                                th, td { border: 1px solid #000; padding: 2px; text-align: center; }
-                                                                                /* First column (Medicine) should be flexible and take room */
-                                                                                th:first-child, td:first-child { width: auto; text-align: right; min-width: 80px; }
-
-                                                                                th:nth-child(1), td:nth-child(1) { text-align: right; width: 51px !important; } /* الصنف */
-                                                                                th:nth-child(2), td:nth-child(2) { width: 15px !important; } /* الرقم التكرارى   */
-                                                                                th:nth-child(3), td:nth-child(3) { width: 15px !important; } /* الرصيد */
-                                                                                th:nth-child(4), td:nth-child(4) { width: 15px !important; } /* الاجمالى */
-
-                                                                                /* All other columns should be narrow */
-                                                                                th:not(:first-child), td:not(:first-child) { width: 35px; white-space: nowrap; }
-                                                                                .total { font-weight: bold; background: #fff; }
-                                                                            </style>
-                                                                        </head>
-                                                                        <body>
-                                                                            <h1>كشف المنصرف الشهري</h1>
-                                                                            <div class="info">${monthYear} - الموظف: ${user}</div>
-                                                                            ${document.getElementById('monthlyTable').outerHTML}
-                                                                            <div style="margin-top: 15px; text-align: center; font-size: 10px; color: #999;">
-                                                                                تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
-                                                                            </div>
-                                                                            <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
-                                                                        </body>
-                                                                        </html>
-                                                                    `);
+                <!DOCTYPE html>
+                <html dir="rtl">
+                <head>
+                    <meta charset="utf-8">
+                    <title>كشف المنصرف الشهري</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        @page { size: A4 landscape; margin: 8mm; }
+                        * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
+                        body { padding: 0; margin:0; }
+                        h1 { text-align: center; margin-bottom: 3px; margin-top:0; font-size:14px; }
+                        .info { text-align: center; margin-bottom: 6px; color: #666; font-size: 10px; }
+                        table { width: 100%; border-collapse: collapse; font-size: 8px; }
+                        th, td { border: 1px solid #000; padding: 2px 3px; text-align: center; }
+                        th:first-child, td:first-child { text-align: right; min-width: 70px; }
+                        th { background: #f1f5f9; font-weight: 700; }
+                        tfoot td { font-weight: bold; background: #f8fafc; }
+                        .footer { text-align: center; margin-top: 6px; font-size: 8px; color: #999; }
+                    </style>
+                </head>
+                <body>
+                    <h1>كشف المنصرف الشهري</h1>
+                    <div class="info">${monthYear} - الموظف: ${user}</div>
+                    <table>
+                        <thead>${theadHtml}</thead>
+                        <tbody>${tbodyHtml}</tbody>
+                        <tfoot>${tfootHtml}</tfoot>
+                    </table>
+                    <div class="footer">
+                        تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
+                    </div>
+                    <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
+                </body>
+                </html>
+            `);
             printWindow.document.close();
         }
 

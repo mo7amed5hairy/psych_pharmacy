@@ -138,18 +138,28 @@
         .footer {
             display: flex;
             justify-content: space-between;
-            margin-top: 30px;
+            margin-top: 40px;
             font-size: 12px;
             font-weight: 600;
             color: #222;
             padding: 0 10px;
         }
 
-        .footer span {
+        .footer .sig-col {
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .footer .sig-col .sig-line {
+            width: 140px;
+            border-top: 1px solid #000;
+            margin-top: 55px;
         }
 
         @media print {
+            @page { size: A4; margin: 5mm; }
             body {
                 background: none;
                 padding: 0;
@@ -157,17 +167,20 @@
 
             .page {
                 box-shadow: none;
-                width: 100%;
+                width: 640px;
+                margin: 0 auto;
+                padding: 20px 25px 30px;
             }
 
-            table,
-            th,
-            td {
+            table {
+                width: 100%;
+            }
+            th, td {
                 border: 1.5px solid #000 !important;
+                padding: 4px 8px;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-
             .total-row .total-label {
                 border-left: 0px !important;
             }
@@ -232,9 +245,18 @@
 
         <!-- FOOTER -->
         <div class="footer">
-            <span class="invoice-title">قسم الحسابات</span>
-            <span class="invoice-title">مدير الشئون المالية والإدارية</span>
-            <span class="invoice-title">مدير الصيدلية</span>
+            <div class="sig-col">
+                <span>قسم الحسابات</span>
+                <div class="sig-line"></div>
+            </div>
+            <div class="sig-col">
+                <span>مدير الشئون المالية والإدارية</span>
+                <div class="sig-line"></div>
+            </div>
+            <div class="sig-col">
+                <span>مدير الصيدلية</span>
+                <div class="sig-line"></div>
+            </div>
         </div>
     </div>
 
