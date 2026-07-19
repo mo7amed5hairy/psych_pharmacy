@@ -20,7 +20,7 @@
         12 => 'ديسمبر'
     ];
     $monthName = isset($month) ? ($arabicMonths[(int) $month] ?? $month) : '';
-    $colsCount = count($dates) + 2;
+    $colsCount = count($columns) + 2;
 @endphp
 
 @section('content')
@@ -75,8 +75,8 @@
                 <thead>
                     <tr>
                         <th>الصنف</th>
-                        @foreach($dates as $day)
-                            <th class="text-center">{{ $day->label }}</th>
+                        @foreach($columns as $col)
+                            <th class="text-center">{{ $col->label }}</th>
                         @endforeach
                         <th class="text-center font-bold">الإجمالي</th>
                     </tr>
@@ -90,9 +90,9 @@
                         @endphp
                         <tr>
                             <td class="font-semibold">{{ $medicine->name }}</td>
-                            @foreach($dates as $day)
+                            @foreach($columns as $col)
                                 @php
-                                    $qty = $medPivot[$day->date] ?? 0;
+                                    $qty = $medPivot[$col->key] ?? 0;
                                     $total += $qty;
                                 @endphp
                                 <td class="text-center {{ $qty > 0 ? 'font-semibold' : 'text-slate-300' }}">
@@ -107,7 +107,7 @@
                 </tbody>
                 <tfoot class="bg-slate-100 font-bold">
                     <tr>
-                        <td colspan="{{ count($dates) + 1 }}" class="text-left text-sm">الإجمالي العام</td>
+                        <td colspan="{{ count($columns) + 1 }}" class="text-left text-sm">الإجمالي العام</td>
                         <td class="text-center font-bold text-sky-800">{{ $grandTotal }}</td>
                     </tr>
                 </tfoot>

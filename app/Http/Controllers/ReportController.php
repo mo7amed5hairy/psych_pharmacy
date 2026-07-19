@@ -19,68 +19,103 @@ class ReportController extends Controller
         $month = $request->get('month', now()->month);
         $year = $request->get('year', now()->year);
         $userId = auth()->id();
+        $user = auth()->user();
 
-        $dmData = DispensedMedicine::select(
-            'medicine_id',
-            'dispense_date',
-            DB::raw('SUM(quantity) as total_quantity')
-        )
-            ->whereMonth('dispense_date', $month)
-            ->whereYear('dispense_date', $year)
-            ->where('user_id', $userId)
-            ->groupBy('medicine_id', 'dispense_date')
-            ->get();
+        $useDayNames = in_array($user->employee_code, ['1111', '2222']);
 
-        $invData = InvoiceItem::select(
-            'invoice_items.medicine_id',
-            DB::raw('DATE(invoices.created_at) as dispense_date'),
-            DB::raw('SUM(invoice_items.quantity) as total_quantity')
-        )
-            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
-            ->whereMonth('invoices.created_at', $month)
-            ->whereYear('invoices.created_at', $year)
-            ->where('invoices.user_id', $userId)
-            ->groupBy('invoice_items.medicine_id', DB::raw('DATE(invoices.created_at)'))
-            ->get();
+        if ($useDayNames) {
+            $dmData = DispensedMedicine::select(
+                'medicine_id',
+                'dispense_date',
+                DB::raw('SUM(quantity) as total_quantity')
+            )
+                ->whereMonth('dispense_date', $month)
+                ->whereYear('dispense_date', $year)
+                ->where('user_id', $userId)
+                ->groupBy('medicine_id', 'dispense_date')
+                ->get();
 
-        $allData = $dmData->concat($invData);
+            $invData = InvoiceItem::select(
+                'invoice_items.medicine_id',
+                DB::raw('DATE(invoices.created_at) as dispense_date'),
+                DB::raw('SUM(invoice_items.quantity) as total_quantity')
+            )
+                ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+                ->whereMonth('invoices.created_at', $month)
+                ->whereYear('invoices.created_at', $year)
+                ->where('invoices.user_id', $userId)
+                ->groupBy('invoice_items.medicine_id', DB::raw('DATE(invoices.created_at)'))
+                ->get();
 
-        $arabicDayNames = [
-            'Saturday' => 'السبت',
-            'Sunday' => 'الأحد',
-            'Monday' => 'الإثنين',
-            'Tuesday' => 'الثلاثاء',
-            'Wednesday' => 'الأربعاء',
-            'Thursday' => 'الخميس',
-            'Friday' => 'الجمعة',
-        ];
+            $allData = $dmData->concat($invData);
 
-        $dates = $allData->pluck('dispense_date')
-            ->filter()
-            ->unique()
-            ->sort()
-            ->values()
-            ->map(function ($date) use ($arabicDayNames) {
-                $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : $date;
-                $dayName = $arabicDayNames[\Carbon\Carbon::parse($dateStr)->format('l')] ?? '';
-                return (object) [
-                    'date' => $dateStr,
-                    'label' => $dayName,
-                ];
-            });
+            $arabicDayNames = [
+                'Saturday' => 'السبت', 'Sunday' => 'الأحد', 'Monday' => 'الإثنين',
+                'Tuesday' => 'الثلاثاء', 'Wednesday' => 'الأربعاء',
+                'Thursday' => 'الخميس', 'Friday' => 'الجمعة',
+            ];
+
+            $columns = $allData->pluck('dispense_date')
+                ->filter()->unique()->sort()->values()
+                ->map(function ($date) use ($arabicDayNames) {
+                    $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : $date;
+                    $dayName = $arabicDayNames[\Carbon\Carbon::parse($dateStr)->format('l')] ?? '';
+                    return (object) ['key' => $dateStr, 'label' => $dayName];
+                });
+
+            $pivot = [];
+            foreach ($allData as $item) {
+                $medId = $item->medicine_id;
+                $rawDate = $item->dispense_date;
+                $date = $rawDate instanceof \Carbon\Carbon ? $rawDate->format('Y-m-d') : ($rawDate ?? '_none');
+                $pivot[$medId][$date] = ($pivot[$medId][$date] ?? 0) + $item->total_quantity;
+            }
+        } else {
+            $dmData = DispensedMedicine::select(
+                'medicine_id',
+                'referral_number',
+                DB::raw('SUM(quantity) as total_quantity')
+            )
+                ->whereMonth('dispense_date', $month)
+                ->whereYear('dispense_date', $year)
+                ->where('user_id', $userId)
+                ->groupBy('medicine_id', 'referral_number')
+                ->get();
+
+            $invData = InvoiceItem::select(
+                'invoice_items.medicine_id',
+                'invoices.referral_number',
+                DB::raw('SUM(invoice_items.quantity) as total_quantity')
+            )
+                ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+                ->whereMonth('invoices.created_at', $month)
+                ->whereYear('invoices.created_at', $year)
+                ->where('invoices.user_id', $userId)
+                ->groupBy('invoice_items.medicine_id', 'invoices.referral_number')
+                ->get();
+
+            $allData = $dmData->concat($invData);
+
+            $columns = $allData->pluck('referral_number')
+                ->filter()->unique()
+                ->sort(function ($a, $b) { return (int) $a - (int) $b; })
+                ->values()
+                ->map(function ($ref) {
+                    return (object) ['key' => $ref, 'label' => $ref];
+                });
+
+            $pivot = [];
+            foreach ($allData as $item) {
+                $medId = $item->medicine_id;
+                $refNum = $item->referral_number ?? '_none';
+                $pivot[$medId][$refNum] = ($pivot[$medId][$refNum] ?? 0) + $item->total_quantity;
+            }
+        }
 
         $medicineIds = $allData->pluck('medicine_id')->unique();
         $medicines = Medicine::whereIn('id', $medicineIds)->get()->keyBy('id');
 
-        $pivot = [];
-        foreach ($allData as $item) {
-            $medId = $item->medicine_id;
-            $rawDate = $item->dispense_date;
-            $date = $rawDate instanceof \Carbon\Carbon ? $rawDate->format('Y-m-d') : ($rawDate ?? '_none');
-            $pivot[$medId][$date] = ($pivot[$medId][$date] ?? 0) + $item->total_quantity;
-        }
-
-        return view('reports.monthly', compact('pivot', 'medicines', 'dates', 'month', 'year', 'userId'));
+        return view('reports.monthly', compact('pivot', 'medicines', 'columns', 'month', 'year', 'userId'));
     }
 
 

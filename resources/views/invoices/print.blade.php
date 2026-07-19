@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>فاتورة صرف رقم {{ $invoice->referral_number }}</title>
+    <title> </title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
 
@@ -35,46 +35,46 @@
             display: flex;
             justify-content: flex-start;
             align-items: flex-start;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
         }
 
         .logo-area {
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            gap: 3px;
+            gap: 2px;
         }
 
         .logo-area img {
-            width: 70px;
-            height: 70px;
+            width: 55px;
+            height: 55px;
             object-fit: contain;
         }
 
         .clinic-name {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 700;
             color: #222;
         }
 
         .clinic-sub {
-            font-size: 10px;
+            font-size: 9px;
             color: #444;
         }
 
         /* TITLE */
         .invoice-title {
             text-align: center;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
-            margin: 8px 0 4px;
+            margin: 4px 0 2px;
             color: #111;
         }
 
         .designer {
-            font-size: 9px;
+            font-size: 8px;
             color: #888;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             direction: ltr;
             text-align: left;
         }
@@ -95,7 +95,7 @@
         th,
         td {
             border: 1.5px solid #000 !important;
-            padding: 6px 10px;
+            padding: 1px 10px !important;
             text-align: revert;
         }
 
@@ -113,10 +113,6 @@
         }
 
         .data-row td {
-            background: #fff;
-        }
-
-        .data-row:nth-child(even) td {
             background: #fff;
         }
 
@@ -138,11 +134,11 @@
         .footer {
             display: flex;
             justify-content: space-between;
-            margin-top: 40px;
-            font-size: 12px;
+            margin-top: 25px;
+            font-size: 11px;
             font-weight: 600;
             color: #222;
-            padding: 0 10px;
+            padding: 0 5px;
         }
 
         .footer .sig-col {
@@ -153,13 +149,17 @@
         }
 
         .footer .sig-col .sig-line {
-            width: 140px;
+            width: 130px;
             border-top: 1px solid #000;
-            margin-top: 55px;
+            margin-top: 40px;
         }
 
         @media print {
-            @page { size: A4; margin: 5mm; }
+            @page {
+                size: A4;
+                margin: 0;
+            }
+
             body {
                 background: none;
                 padding: 0;
@@ -167,20 +167,23 @@
 
             .page {
                 box-shadow: none;
-                width: 640px;
+                width: 620px;
                 margin: 0 auto;
-                padding: 20px 25px 30px;
+                padding: 8px 20px 20px;
             }
 
             table {
                 width: 100%;
             }
-            th, td {
+
+            th,
+            td {
                 border: 1.5px solid #000 !important;
-                padding: 4px 8px;
+                padding: 6px 10px;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
+
             .total-row .total-label {
                 border-left: 0px !important;
             }

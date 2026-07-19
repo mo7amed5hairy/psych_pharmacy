@@ -37,33 +37,23 @@ class StockService
      */
     private static function initUserForMonth(User $user, $monthDate)
     {
-        // Find existing record for this month
-        $stock = Stock::where('user_id', $user->id)
-            ->where('stock_date', $monthDate)
-            ->first();
-
-        // If it's already initialized, skip
-        if ($stock && $stock->is_init) {
-            return;
-        }
-
         // Find the most recent previous month's stock records
         $lastStockDate = Stock::where('user_id', $user->id)
             ->where('stock_date', '<', $monthDate)
             ->max('stock_date');
 
         if (!$lastStockDate) {
-            // No previous stock, but we should mark this month as "init" anyway
-            if ($stock) {
-                $stock->update(['is_init' => true]);
-            }
             return;
         }
 
-        // Get previous records
+        // Get all previous records
         $previousStocks = Stock::where('user_id', $user->id)
             ->where('stock_date', $lastStockDate)
             ->get();
+
+        if ($previousStocks->isEmpty()) {
+            return;
+        }
 
         DB::transaction(function () use ($user, $monthDate, $previousStocks) {
             foreach ($previousStocks as $prevStock) {
@@ -74,23 +64,23 @@ class StockService
                     'stock_date' => $monthDate,
                 ]);
 
-                if (!$currentStock->is_init) {
-                    $oldQty = $prevStock->quantity;
-                    // ADD previous balance to current (manual + auto)
-                    $currentStock->quantity += $oldQty;
-                    $currentStock->is_init = true;
-                    $currentStock->save();
-
-                    // Send Notification
-                    $user->notify(new \App\Notifications\StockInitialized(
-                        $prevStock->medicine->name,
-                        $oldQty,
-                        $currentStock->quantity,
-                        \Carbon\Carbon::parse($currentStock->stock_date)->format('Y-m-d')
-                    ));
-
+                // Skip only if this medicine is already initialized for this month
+                if ($currentStock->exists && $currentStock->is_init) {
+                    continue;
                 }
 
+                $oldQty = $prevStock->quantity;
+                $currentStock->quantity += $oldQty;
+                $currentStock->is_init = true;
+                $currentStock->save();
+
+                // Send notification
+                $user->notify(new \App\Notifications\StockInitialized(
+                    $prevStock->medicine->name,
+                    $oldQty,
+                    $currentStock->quantity,
+                    \Carbon\Carbon::parse($currentStock->stock_date)->format('Y-m-d')
+                ));
             }
         });
     }

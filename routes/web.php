@@ -54,44 +54,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Referral Number Check
     Route::get('/check-referral-number', function (\Illuminate\Http\Request $r) {
-        $user = auth()->user();
-        if (!$user)
-            return response()->json(['exists' => false]);
-
-        // Relax restriction for everyone EXCEPT Hadeer (2222)
-        // Since this route is only used for Dispensed Medicines real-time check.
-        if ($user->employee_code !== '2222') {
-            return response()->json(['exists' => false]);
-        }
-
-        $number = $r->get('number');
-        $dateStr = $r->get('date');
-
-        try {
-            $date = $dateStr ? \Carbon\Carbon::parse($dateStr)->format('Y-m-d') : now()->format('Y-m-d');
-        } catch (\Exception $e) {
-            $date = now()->format('Y-m-d');
-        }
-
-        $userId = $user->id;
-
-        $invoiceExists = \App\Models\Invoice::where('referral_number', $number)
-            ->where('user_id', $userId)
-            ->whereDate('created_at', $date)
-            ->exists();
-
-        $dispensedExists = \App\Models\DispensedMedicine::where('referral_number', $number)
-            ->where('user_id', $userId)
-            ->whereDate('dispense_date', $date)
-            ->exists();
-
-        if ($invoiceExists || $dispensedExists) {
-            $type = $invoiceExists ? 'فاتورة' : 'صرفية';
-            return response()->json([
-                'exists' => true,
-                'message' => "الرقم \"{$number}\" مستخدم مسبقاً في {$type} بتاريخ {$date}"
-            ]);
-        }
         return response()->json(['exists' => false]);
     })->name('check-referral-number');
 
