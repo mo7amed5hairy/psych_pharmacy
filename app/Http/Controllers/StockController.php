@@ -12,7 +12,6 @@ class StockController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        \App\Services\StockService::initializeMonthlyStock($user);
 
         $stockDate = $request->get('stock_date', now()->format('Y-m-01'));
 

@@ -25,7 +25,6 @@ class InvoiceController extends Controller
 
     public function create()
     {
-        \App\Services\StockService::initializeMonthlyStock(Auth::user());
         return view('invoices.create');
     }
 

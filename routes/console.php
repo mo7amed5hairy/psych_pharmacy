@@ -16,8 +16,6 @@ Artisan::command('dump-users', function () {
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Cache;
 
-Schedule::command('app:initialize-stock')->monthlyOn(1, '00:00');
-
 // Heartbeat to monitor if scheduler is running
 Schedule::call(function () {
     Cache::store('file')->put('scheduler_heartbeat', now()->toDateTimeString());

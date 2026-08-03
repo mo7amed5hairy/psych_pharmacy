@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Medicine;
 use App\Models\Invoice;
 use App\Models\Stock;
-use App\Services\StockService;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
@@ -14,9 +13,6 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-
-        // Ensure month is initialized
-        StockService::initializeMonthlyStock($user);
 
         $today = Carbon::today();
 

@@ -523,6 +523,13 @@
                             </a>
                         @endif
 
+                        @if(auth()->user()->hasPermission('stock_transfer'))
+                            <a href="{{ route('stock-transfer.index') }}"
+                                class="{{ request()->routeIs('stock-transfer.*') ? 'active' : '' }}" onclick="showLoader()">
+                                <i class="fas fa-exchange-alt"></i><span>تحويل الأرصدة</span>
+                            </a>
+                        @endif
+
                         @if(auth()->user()->hasPermission('dispensed_medicines'))
                             <a href="{{ route('dispensed-medicines.index') }}"
                                 class="{{ request()->routeIs('dispensed-medicines.*') ? 'active' : '' }}"

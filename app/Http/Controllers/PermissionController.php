@@ -29,6 +29,7 @@ class PermissionController extends Controller
             'medicines' => 'قاموس الأدوية',
             'units' => 'أنواع الوحدات',
             'stock' => 'أرصدة الأدوية(المخزن)',
+            'stock_transfer' => 'تحويل الأرصدة',
             'dispensed_medicines' => 'الأدوية المنصرفة',
             'invoice_create' => 'إضافة فواتير صرف',
             'invoice_list' => 'قائمة الفواتير',

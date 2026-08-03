@@ -52,6 +52,11 @@ Route::middleware(['auth'])->group(function () {
     // Stock
     Route::resource('stock', StockController::class)->except(['show', 'destroy'])->middleware('permission:stock');
 
+    // Stock Transfer
+    Route::get('/stock-transfer', [\App\Http\Controllers\StockTransferController::class, 'index'])->name('stock-transfer.index')->middleware('permission:stock_transfer');
+    Route::get('/stock-transfer/filter', [\App\Http\Controllers\StockTransferController::class, 'filter'])->name('stock-transfer.filter')->middleware('permission:stock_transfer');
+    Route::post('/stock-transfer', [\App\Http\Controllers\StockTransferController::class, 'transfer'])->name('stock-transfer.transfer')->middleware('permission:stock_transfer');
+
     // Referral Number Check
     Route::get('/check-referral-number', function (\Illuminate\Http\Request $r) {
         return response()->json(['exists' => false]);
