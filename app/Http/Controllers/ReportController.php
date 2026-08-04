@@ -60,7 +60,8 @@ class ReportController extends Controller
                 ->map(function ($date) use ($arabicDayNames) {
                     $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : $date;
                     $dayName = $arabicDayNames[\Carbon\Carbon::parse($dateStr)->format('l')] ?? '';
-                    return (object) ['key' => $dateStr, 'label' => $dayName];
+                    $sub = \Carbon\Carbon::parse($dateStr)->format('d/m');
+                    return (object) ['key' => $dateStr, 'label' => $dayName, 'sub' => $sub];
                 });
 
             $pivot = [];

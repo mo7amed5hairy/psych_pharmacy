@@ -42,7 +42,7 @@
         </div>
 
         <div class="table-wrap">
-            <table class="data data-table" id="dailyTable">
+            <table class="data" id="dailyTable">
                 <thead>
                     <tr>
                         <th>الصنف</th>
@@ -81,6 +81,22 @@
 
 @push('scripts')
     <script>
+        (function initDailyTable() {
+            if (typeof $ === 'undefined' || typeof $.fn.DataTable === 'undefined' || typeof $('#dailyTable').DataTable !== 'function') {
+                setTimeout(initDailyTable, 50);
+                return;
+            }
+            $('#dailyTable').DataTable({
+                responsive: false,
+                paging: true,
+                pageLength: 10,
+                searching: false,
+                info: true,
+                autoWidth: false,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'الكل']]
+            });
+        })();
+
         // Enter key navigation
         document.addEventListener('keydown', function (e) {
             if (e.key !== 'Enter' || (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON')) return;
@@ -99,6 +115,20 @@
             const date = '{{ $date }}';
             const user = '{{ auth()->user()->name }} ({{ auth()->user()->employee_code }})';
 
+            const table = document.getElementById('dailyTable');
+            const cleanWidths = (el) => {
+                el.style.width = '';
+                el.style.minWidth = '';
+                el.style.maxWidth = '';
+                el.removeAttribute('width');
+            };
+            const thead = table.querySelector('thead').cloneNode(true);
+            thead.querySelectorAll('th').forEach(cleanWidths);
+            const theadHtml = thead.innerHTML;
+            const tbody = table.querySelector('tbody').cloneNode(true);
+            tbody.querySelectorAll('td').forEach(cleanWidths);
+            const tbodyHtml = tbody.innerHTML;
+
             printWindow.document.write(`
                 <!DOCTYPE html>
                 <html dir="rtl">
@@ -107,28 +137,82 @@
                     <title>كشف المنصرف اليومي</title>
                     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
                     <style>
+                        @page { size: A4 landscape; margin: 5mm; }
                         * { font-family: 'Cairo', sans-serif; box-sizing: border-box; }
-                        body { padding: 15px; }
-                        h1 { text-align: center; margin-bottom: 5px; margin-top:0;}
-                        .info { text-align: center; margin-bottom: 15px; color: #666; font-size: 12px; }
-                        table { width: 30% !important; margin: 0 auto; border-collapse: collapse; font-size: .7rem !important; table-layout: auto; }
-                        th, td { border: 1px solid #000; padding: 2px; text-align: center; }
-                        th:first-child, td:first-child { text-align: right; width: 51px !important; }
-                        th:nth-child(2), td:nth-child(2) { width: 15px !important; }
-                        th:nth-child(3), td:nth-child(3) { width: 15px !important; }
-                        th:nth-child(4), td:nth-child(4) { width: 15px !important; }
-                        th:not(:first-child), td:not(:first-child) { width: 35px; white-space: nowrap; }
-                        .total { font-weight: bold; background: #fff; }
+                        body { padding: 0; margin:0; }
+                        h1 { text-align: center; margin: 2px 0; font-size: 15px; }
+                        .info { text-align: center; margin-bottom: 5px; color: #666; font-size: 11px; }
+                        #fullTable { border-collapse: collapse; font-size: 15px; line-height: 1.2; width: max-content; }
+                        table.chunk { border-collapse: collapse; font-size: 15px; line-height: 1.2; margin: 0 auto; }
+                        th, td { border: 1px solid #000; padding: 2px 4px; text-align: center; white-space: nowrap; }
+                        th:first-child, td:first-child, td.name { text-align: right; white-space: normal; word-break: break-word; }
+                        th { background: #f1f5f9; font-weight: 700; }
+                        tfoot td { font-weight: bold; background: #f8fafc; }
+                        .pagebreak { page-break-before: always; }
+                        .footer { text-align: center; margin-top: 5px; font-size: 9px; color: #999; }
                     </style>
                 </head>
                 <body>
                     <h1>كشف المنصرف اليومي</h1>
                     <div class="info">${date} - الموظف: ${user}</div>
-                    ${document.getElementById('dailyTable').outerHTML}
-                    <div style="margin-top: 15px; text-align: center; font-size: 10px; color: #999;">
+                    <div id="fullWrap">
+                        <table id="fullTable">
+                            <thead>${theadHtml}</thead>
+                            <tbody>${tbodyHtml}</tbody>
+                        </table>
+                    </div>
+                    <div id="chunks"></div>
+                    <div class="footer">
                         تم إصدار هذا التقرير بواسطة: {{ auth()->user()->name }} - {{ now()->format('Y-m-d H:i') }}
                     </div>
-                    <script>window.onload = () => setTimeout(() => window.print(), 500);<\/script>
+                    <script>
+                        window.onload = function () {
+                            var full = document.getElementById('fullTable');
+                            var ths = full.querySelectorAll('thead tr th');
+                            var n = ths.length - 2;
+                            if (n > 0) {
+                                var nameW = ths[0].getBoundingClientRect().width;
+                                var totalW = ths[n + 1].getBoundingClientRect().width;
+                                var numericW = ths[1].getBoundingClientRect().width;
+                                var available = 1060;
+                                var perPage = Math.max(1, Math.floor((available - nameW - totalW) / numericW));
+
+                                var labels = [];
+                                for (var i = 1; i <= n; i++) labels.push(ths[i].textContent.trim());
+
+                                var rows = [];
+                                var trs = full.querySelectorAll('tbody tr');
+                                for (var r = 0; r < trs.length; r++) {
+                                    var tds = trs[r].querySelectorAll('td');
+                                    if (tds.length !== ths.length) continue;
+                                    var qtys = [];
+                                    for (var j = 1; j < tds.length - 1; j++) qtys.push(tds[j].textContent.trim());
+                                    rows.push({ name: tds[0].textContent.trim(), qtys: qtys, total: tds[tds.length - 1].textContent.trim() });
+                                }
+
+                                var html = '';
+                                for (var start = 0; start < labels.length; start += perPage) {
+                                    var end = Math.min(start + perPage, labels.length);
+                                    var t = '<table class="chunk"><thead><tr><th>الصنف</th>';
+                                    for (var c = start; c < end; c++) t += '<th>' + labels[c] + '</th>';
+                                    t += '<th>الإجمالي</th></tr></thead><tbody>';
+                                    for (var rr = 0; rr < rows.length; rr++) {
+                                        var row = rows[rr];
+                                        t += '<tr><td class="name">' + row.name + '</td>';
+                                        for (var cc = start; cc < end; cc++) t += '<td>' + (row.qtys[cc] !== undefined ? row.qtys[cc] : '-') + '</td>';
+                                        t += '<td>' + row.total + '</td></tr>';
+                                    }
+                                    t += '</tbody></table>';
+                                    html += t;
+                                    if (end < labels.length) html += '<div class="pagebreak"></div>';
+                                }
+                                document.getElementById('chunks').innerHTML = html;
+                            }
+                            var fw = document.getElementById('fullWrap');
+                            if (fw) fw.style.display = 'none';
+                            setTimeout(function () { window.print(); }, 200);
+                        };
+                    <\/script>
                 </body>
                 </html>
             `);

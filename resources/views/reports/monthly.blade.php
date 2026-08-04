@@ -76,7 +76,12 @@
                     <tr>
                         <th>الصنف</th>
                         @foreach($columns as $col)
-                            <th class="text-center">{{ $col->label }}</th>
+                            <th class="text-center">
+                                {{ $col->label }}
+                                @if(!empty($col->sub ?? null))
+                                    <div class="text-xs font-normal text-white mt-0.5">{{ $col->sub }}</div>
+                                @endif
+                            </th>
                         @endforeach
                         <th class="text-center font-bold">الإجمالي</th>
                     </tr>
