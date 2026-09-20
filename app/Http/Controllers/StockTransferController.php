@@ -163,7 +163,7 @@ class StockTransferController extends Controller
 
             $balance = (int) $openingRecord->quantity;
             $dispensed = (int) ($dmGrouped[$medicineId] ?? 0) + (int) ($invGrouped[$medicineId] ?? 0);
-            $opening = $balance + $dispensed;
+            $opening = $balance;
             $remaining = $opening - $dispensed;
 
             $rows[] = [

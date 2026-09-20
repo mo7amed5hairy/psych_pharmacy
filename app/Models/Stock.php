@@ -10,7 +10,7 @@ class Stock extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'medicine_id', 'quantity', 'stock_date', 'is_init'];
+    protected $fillable = ['user_id', 'medicine_id', 'quantity', 'dispensed', 'stock_date', 'is_init'];
 
     protected $casts = [
         'stock_date' => 'date',

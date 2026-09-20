@@ -29,11 +29,13 @@ class DashboardController extends Controller
             'monthly_stock' => Stock::where('user_id', $user->id)
                 ->whereMonth('stock_date', $currentMonth)
                 ->whereYear('stock_date', $currentYear)
-                ->sum('quantity'),
+                ->get()
+                ->sum(fn($s) => $s->quantity - $s->dispensed),
             'low_stock' => Stock::where('user_id', $user->id)
                 ->whereMonth('stock_date', $currentMonth)
                 ->whereYear('stock_date', $currentYear)
-                ->where('quantity', '<', 100)
+                ->get()
+                ->filter(fn($s) => ($s->quantity - $s->dispensed) < 100)
                 ->count(),
         ];
 

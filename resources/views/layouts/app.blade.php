@@ -169,6 +169,17 @@
             border: 1px solid #94a3b8;
         }
 
+        table.dataTable thead th,
+        table.dataTable thead td,
+        table.dataTable tfoot th,
+        table.dataTable tfoot td,
+        table.dataTable thead th.dt-head-left,
+        table.dataTable thead td.dt-head-left,
+        table.dataTable tfoot th.dt-head-left,
+        table.dataTable tfoot td.dt-head-left {
+            text-align: inherit !important;
+        }
+
         table.data tbody tr:hover {
             background: #f8fafc;
         }
@@ -571,8 +582,7 @@
                                 </div>
                                 <i class="fas fa-chevron-left chevron"></i>
                             </div>
-                            <div id="reports-menu"
-                                class="sidebar-dropdown {{ request()->routeIs('reports.*') ? 'show' : '' }}">
+                            <div id="reports-menu" class="sidebar-dropdown {{ request()->routeIs('reports.*') ? 'show' : '' }}">
                                 <a href="{{ route('reports.monthly') }}"
                                     class="{{ request()->routeIs('reports.monthly') ? 'active' : '' }}" onclick="showLoader()">
                                     <i class="fas fa-calendar-alt"></i><span>شهري</span>

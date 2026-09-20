@@ -68,23 +68,21 @@ class DispensedMedicineController extends Controller
                  * 3) هات المخزون الخاص بالمستخدم فقط لهذا الشهر
                  */
                 $monthStart = \Carbon\Carbon::parse($item['dispense_date'])->startOfMonth()->format('Y-m-d');
+                $this->ensureMonthTransferred($monthStart);
+
                 $stock = \App\Models\Stock::where('user_id', Auth::id())
                     ->where('medicine_id', $item['medicine_id'])
                     ->where('stock_date', $monthStart)
                     ->lockForUpdate()
                     ->first();
 
-
-                if (!$stock) {
-                    throw new \Exception("الصنف {$medicine->name} غير موجود في المخزون");
-                }
-
                 /**
                  * 4) التحقق من الكمية
                  */
-                if ($stock->quantity < $item['quantity']) {
+                $remaining = $stock ? ($stock->quantity - $stock->dispensed) : 0;
+                if (!$stock || $remaining < $item['quantity']) {
                     throw new \Exception(
-                        "الكمية غير كافية من {$medicine->name} (المتاح {$stock->quantity})"
+                        "الكمية غير كافية من {$medicine->name} (الرصيد المتاح: {$remaining})"
                     );
                 }
 
@@ -100,9 +98,9 @@ class DispensedMedicineController extends Controller
                 ]);
 
                 /**
-                 * 6) خصم من المخزون
+                 * 6) إضافة للمنصرف في المخزون
                  */
-                $stock->decrement('quantity', $item['quantity']);
+                $stock->increment('dispensed', $item['quantity']);
 
                 $successCount++;
             }
@@ -153,25 +151,36 @@ class DispensedMedicineController extends Controller
 
             DB::transaction(function () use ($dispensed, $item) {
 
+                // شهر المخزون القديم = شهر تاريخ الصرفية الحالي
+                $oldMonthStart = \Carbon\Carbon::parse($dispensed->dispense_date)->startOfMonth()->format('Y-m-d');
+
                 $oldStock = \App\Models\Stock::where('user_id', Auth::id())
                     ->where('medicine_id', $dispensed->medicine_id)
+                    ->where('stock_date', $oldMonthStart)
                     ->first();
 
                 if ($oldStock) {
-                    $oldStock->increment('quantity', $dispensed->quantity);
+                    $oldStock->decrement('dispensed', $dispensed->quantity);
                 }
+
+                // شهر المخزون الجديد = شهر التاريخ الجديد للصرفية
+                $newMonthStart = \Carbon\Carbon::parse($item['dispense_date'])->startOfMonth()->format('Y-m-d');
+
+                $this->ensureMonthTransferred($newMonthStart);
 
                 $newStock = \App\Models\Stock::where('user_id', Auth::id())
                     ->where('medicine_id', $item['medicine_id'])
+                    ->where('stock_date', $newMonthStart)
                     ->first();
 
-                if (!$newStock || $newStock->quantity < $item['quantity']) {
-                    throw new \Exception('الكمية غير متاحة في المخزن');
+                $remaining = $newStock ? ($newStock->quantity - $newStock->dispensed) : 0;
+                if (!$newStock || $remaining < $item['quantity']) {
+                    throw new \Exception('الكمية غير كافية من الدواء (الرصيد المتاح: ' . $remaining . ')');
                 }
 
                 $dispensed->update($item);
 
-                $newStock->decrement('quantity', $item['quantity']);
+                $newStock->increment('dispensed', $item['quantity']);
             });
 
             return response()->json([
@@ -195,18 +204,34 @@ class DispensedMedicineController extends Controller
             abort(403);
         }
 
-        // Return quantity to stock
+        // Return quantity from dispensed to stock
+        $monthStart = \Carbon\Carbon::parse($dispensedMedicine->dispense_date)->startOfMonth()->format('Y-m-d');
         $stock = \App\Models\Stock::where('user_id', Auth::id())
             ->where('medicine_id', $dispensedMedicine->medicine_id)
-            ->where('stock_date', $dispensedMedicine->dispense_date)
+            ->where('stock_date', $monthStart)
             ->first();
 
         if ($stock) {
-            $stock->increment('quantity', $dispensedMedicine->quantity);
+            $stock->decrement('dispensed', $dispensedMedicine->quantity);
         }
 
         $dispensedMedicine->delete();
 
         return redirect()->route('dispensed-medicines.index')->with('success', 'تم حذف السجل بنجاح');
+    }
+
+    /**
+     * يتأكد من أن المستخدم قام بتحويل أرصدة إلى الشهر المطلوب (بوجود أي سجل رصيد لهذا الشهر).
+     * إذا لم يوجد أي رصيد للشهر إطلاقاً فهذا يعني أن التحويل لم يتم.
+     */
+    private function ensureMonthTransferred(string $monthStart): void
+    {
+        $hasStock = \App\Models\Stock::where('user_id', Auth::id())
+            ->where('stock_date', $monthStart)
+            ->exists();
+
+        if (!$hasStock) {
+            throw new \Exception('لم يتم تحويل أرصدة للشهر الذي تريد الصرف منه');
+        }
     }
 }

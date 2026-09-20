@@ -23,8 +23,19 @@
         $monthName = isset($month) ? ($arabicMonths[(int) $month] ?? $month) : '';
     @endphp
 
+    @if(session('success'))
+        <div class="alert alert-success mb-4">{{ session('success') }}</div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger mb-4">
+            @foreach($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
     <!-- View Filter -->
-    <div class="card p-5 mb-5 bg-sky-50 border-sky-100 sky-blue">
         <form method="GET" action="{{ route('stock.index') }}" class="flex items-end gap-3 flex-wrap">
             <div>
                 <label class="label text-sky-800">عرض أرصدة شهر</label>
@@ -92,12 +103,8 @@
                 <tbody>
                     @foreach($stock as $item)
                         @php
-                            $dispensed = App\Models\DispensedMedicine::where('user_id', auth()->id())
-                                ->where('medicine_id', $item->medicine_id)
-                                ->whereMonth('dispense_date', $item->stock_date->month)
-                                ->whereYear('dispense_date', $item->stock_date->year)
-                                ->sum('quantity');
-                            $opening = $item->quantity + $dispensed;
+                            $opening = $item->quantity;
+                            $dispensed = $item->dispensed;
                             $remaining = $opening - $dispensed;
                         @endphp
                         <tr>
@@ -109,7 +116,7 @@
                                 {{ $remaining }}
                             </td>
                             <td>
-                                <button onclick="editStock({{ $item->id }}, {{ $item->quantity }}, {{ $dispensed }})" class="btn btn-ghost">
+                                <button onclick="editStock({{ $item->id }}, {{ $item->quantity }}, {{ $item->dispensed }})" class="btn btn-ghost">
                                     <i class="fas fa-edit"></i>
                                 </button>
                             </td>
@@ -132,11 +139,11 @@
                 @csrf
                 @method('PUT')
                 <label class="label">رصيد أول الشهر</label>
-                <input type="number" id="editStockOpening" class="input mb-3" min="0" oninput="calcRemaining()">
+                <input type="number" name="quantity" id="editStockOpening" class="input mb-3" min="0" oninput="calcRemaining()">
                 <label class="label">المنصرف</label>
-                <input type="number" id="editStockDispensed" class="input mb-3" min="0" oninput="calcRemaining()">
+                <input type="number" name="dispensed" id="editStockDispensed" class="input mb-3" min="0" readonly style="background:#f1f5f9;">
                 <label class="label">المتبقى</label>
-                <input type="number" name="quantity" id="editStockQuantity" class="input mb-4" min="0" readonly style="background:#f1f5f9;">
+                <input type="number" id="editStockQuantity" class="input mb-4" min="0" readonly style="background:#f1f5f9;">
                 <div class="flex gap-2">
                     <button type="button" onclick="closeStockModal()" class="btn btn-ghost flex-1">إلغاء</button>
                     <button type="submit" class="btn btn-success flex-1">حفظ</button>
@@ -214,11 +221,10 @@
             }
         });
 
-        function editStock(id, remaining, dispensed) {
-            const opening = remaining + dispensed;
+        function editStock(id, opening, dispensed) {
             document.getElementById('editStockOpening').value = opening;
             document.getElementById('editStockDispensed').value = dispensed;
-            document.getElementById('editStockQuantity').value = remaining;
+            calcRemaining();
             document.getElementById('editStockForm').action = '{{ url('/stock') }}' + '/' + id;
             document.getElementById('editStockModal').classList.remove('hidden');
             document.getElementById('editStockModal').classList.add('flex');

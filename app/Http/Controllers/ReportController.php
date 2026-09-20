@@ -300,7 +300,7 @@ class ReportController extends Controller
                 $fromInvoices = (int) $invQuery->sum('quantity');
 
                 $dispensed = $fromDispensed + $fromInvoices;
-                $opening = $stock->quantity + $dispensed;
+                $opening = $stock->quantity;
                 $stock->dispensed = $dispensed;
                 $stock->opening = $opening;
                 $stock->remaining = $opening - $dispensed;

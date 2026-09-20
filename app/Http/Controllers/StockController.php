@@ -45,13 +45,15 @@ class StockController extends Controller
             ->first();
 
         if ($stock) {
-            $stock->increment('quantity', $validated['quantity']);
+            $stock->quantity += $validated['quantity'];
+            $stock->save();
         } else {
             Stock::create([
                 'user_id' => Auth::id(),
                 'medicine_id' => $validated['medicine_id'],
                 'stock_date' => $validated['stock_date'],
                 'quantity' => $validated['quantity'],
+                'dispensed' => 0,
             ]);
         }
 
@@ -62,9 +64,25 @@ class StockController extends Controller
     {
         $validated = $request->validate([
             'quantity' => 'required|integer|min:0',
+            'dispensed' => 'required|integer|min:0',
         ]);
 
-        $stock->update($validated);
+        if ($stock->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $opening = $validated['quantity'];
+        $dispensed = $validated['dispensed'];
+
+        if ($dispensed > $opening) {
+            return redirect()->route('stock.index')
+                ->withErrors(['error' => "المنصرف لا يمكن أن يكون أكبر من رصيد أول الشهر (المتاح: {$opening})"])
+                ->withInput();
+        }
+
+        $stock->quantity = $opening;
+        $stock->dispensed = $dispensed;
+        $stock->save();
 
         return redirect()->route('stock.index')->with('success', 'تم تحديث الرصيد بنجاح');
     }
