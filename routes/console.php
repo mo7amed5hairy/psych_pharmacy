@@ -21,4 +21,7 @@ Schedule::call(function () {
     Cache::store('file')->put('scheduler_heartbeat', now()->toDateTimeString());
 })->everyMinute();
 
+// Remove draft tombstones once every client had time to drop its local copy.
+Schedule::command('drafts:purge')->dailyAt('03:00');
+
 
