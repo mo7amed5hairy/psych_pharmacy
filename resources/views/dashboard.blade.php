@@ -5,35 +5,7 @@
 @section('page-subtitle', 'القائمة حسب العهدة (كود الموظف: ' . auth()->user()->employee_code . ')')
 
 @section('content')
-    <!-- Scheduler Monitor (Temporary for verification) -->
-    <div class="mb-6">
-        <div
-            class="card p-4 flex items-center justify-between {{ $schedulerActive ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100' }}">
-            <div class="flex items-center gap-3">
-                <div
-                    class="w-10 h-10 rounded-full flex items-center justify-center {{ $schedulerActive ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white' }}">
-                    <i class="fas {{ $schedulerActive ? 'fa-check-circle' : 'fa-times-circle' }} text-xl"></i>
-                </div>
-                <div>
-                    <div class="font-extrabold text-sm {{ $schedulerActive ? 'text-emerald-900' : 'text-rose-900' }}">
-                        حالة الترحيل التلقائى لرصيد الأدوية
-                    </div>
-
-                    <p class="text-xs {{ $schedulerActive ? 'text-emerald-700' : 'text-rose-700' }} mt-0.5">
-                        آخر استجابة من :
-                        {{ $lastRun ? \Carbon\Carbon::parse($lastRun)->diffForHumans() : 'لم يبق التفعيل بعد' }}
-                    </p>
-                </div>
-            </div>
-            <div>
-                @if($schedulerActive)
-                    <span class="pill pill-green">متصل ويعمل</span>
-                @else
-                    <span class="pill pill-rose text-white! bg-rose-600!">غير متصل (تأكد من تشغيل ملف BAT)</span>
-                @endif
-            </div>
-        </div>
-    </div>
+    {{-- كارت مراقبة المجدول/الترحيل التلقائي مخفي: الترحيل أصبح يدوياً بواسطة المستخدم. --}}
 
     <!-- Stats -->
 
