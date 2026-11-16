@@ -7,7 +7,8 @@
 @section('content')
     <!-- Add/Edit Form -->
     <div class="card p-5 mb-5">
-        <form id="medicineForm" method="POST" action="{{ route('medicines.store') }}">
+        <form id="medicineForm" method="POST" action="{{ route('medicines.store') }}"
+            data-draft-type="medicine">
             @csrf
             <input type="hidden" name="_method" id="formMethod" value="POST">
             <input type="hidden" name="medicine_id" id="medicineId">
@@ -155,6 +156,8 @@
             medicineRowCount = 0;
 
             document.getElementById('medicineName').focus();
+
+            document.getElementById('medicineForm').dispatchEvent(new Event('draft:capture'));
         }
 
         function resetForm() {

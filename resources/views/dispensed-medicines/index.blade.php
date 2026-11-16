@@ -26,7 +26,8 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('dispensed-medicines.store') }}" id="dispensedForm" class="no-loader">
+        <form method="POST" action="{{ route('dispensed-medicines.store') }}" id="dispensedForm"
+            data-draft-type="dispensed_medicine" class="no-loader">
             @csrf
 
             <div id="dispensedItemsContainer">
@@ -248,6 +249,8 @@
                     dispensedRowCount = 0;
                     addDispensedRow();
 
+                    // The server already stored the data: drop the local draft.
+                    this.dispatchEvent(new CustomEvent('draft:saved'));
 
                     setTimeout(() => location.reload(), 2000);
                 })

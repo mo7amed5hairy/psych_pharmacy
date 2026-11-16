@@ -12,7 +12,7 @@
         <!-- Add Unit Form -->
         <div class="card p-5">
             <h3 class="font-extrabold text-slate-900 mb-3">إضافة نوع وحدة</h3>
-            <form method="POST" action="{{ route('units.store') }}">
+            <form method="POST" action="{{ route('units.store') }}" data-draft-type="unit">
                 @csrf
                 <label class="label">اسم الوحدة</label>
                 <input type="text" name="name" class="input mb-3" placeholder="مثال: قرص" required>
@@ -71,8 +71,9 @@
             <h3 class="font-extrabold text-slate-900 mb-4">تعديل الوحدة</h3>
             <div id="editError" class="hidden mb-3 p-2 bg-rose-50 border border-rose-200 rounded text-rose-800 text-sm">
             </div>
-            <form id="editForm" method="POST" class="no-loader">
+            <form id="editForm" method="POST" class="no-loader" data-draft-type="unit">
                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="unit_type_id" id="editUnitId">
                 <label class="label">اسم الوحدة</label>
                 <input type="text" name="name" id="editUnitName" class="input mb-4" required>
                 <div class="flex gap-2">
@@ -88,11 +89,12 @@
     <script>
         function editUnit(id, name) {
             const baseUrl = document.getElementById('baseUrl').getAttribute('data-url');
+            document.getElementById('editUnitId').value = id;
             document.getElementById('editUnitName').value = name;
             document.getElementById('editForm').action = baseUrl + '/units/' + id + '/update';
             document.getElementById('editModal').classList.remove('hidden');
             document.getElementById('editModal').classList.add('flex');
-            console.log('Edit URL:', document.getElementById('editForm').action);
+            document.getElementById('editForm').dispatchEvent(new Event('draft:capture'));
         }
 
         function closeModal() {

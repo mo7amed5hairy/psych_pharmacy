@@ -57,7 +57,8 @@
     <!-- Add Stock Form -->
     <div class="card p-5 mb-5">
         <div class="mb-4 text-slate-700 font-bold border-b pb-2">إضافة / تعديل رصيد صنف</div>
-        <form method="POST" action="{{ route('stock.store') }}" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <form method="POST" action="{{ route('stock.store') }}" data-draft-type="stock"
+            class="grid grid-cols-1 md:grid-cols-4 gap-3">
             @csrf
             <div>
                 <label class="label">تاريخ الرصيد</label>
@@ -135,9 +136,10 @@
     <div id="editStockModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
         <div class="card p-6 w-full max-w-sm mx-4">
             <h3 class="font-extrabold text-slate-900 mb-4">تعديل الرصيد</h3>
-            <form id="editStockForm" method="POST">
+            <form id="editStockForm" method="POST" data-draft-type="stock">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="stock_id" id="editStockId">
                 <label class="label">رصيد أول الشهر</label>
                 <input type="number" name="quantity" id="editStockOpening" class="input mb-3" min="0" oninput="calcRemaining()">
                 <label class="label">المنصرف</label>
@@ -224,10 +226,12 @@
         function editStock(id, opening, dispensed) {
             document.getElementById('editStockOpening').value = opening;
             document.getElementById('editStockDispensed').value = dispensed;
+            document.getElementById('editStockId').value = id;
             calcRemaining();
             document.getElementById('editStockForm').action = '{{ url('/stock') }}' + '/' + id;
             document.getElementById('editStockModal').classList.remove('hidden');
             document.getElementById('editStockModal').classList.add('flex');
+            document.getElementById('editStockForm').dispatchEvent(new Event('draft:capture'));
         }
 
         function calcRemaining() {

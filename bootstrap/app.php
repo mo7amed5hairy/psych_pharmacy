@@ -14,6 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
+            'draft-admin' => \App\Http\Middleware\DraftAdminMiddleware::class,
+        ]);
+
+        // Marks a draft as finalized right after its real controller saved the data.
+        $middleware->web(append: [
+            \App\Http\Middleware\FinalizeDraftAfterSave::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

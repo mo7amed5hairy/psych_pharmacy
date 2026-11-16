@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Stock;
 use App\Models\Medicine;
+use App\Models\Stock;
+use App\Services\StockService;
+use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +17,6 @@ class StockController extends Controller
 
         $stockDate = $request->get('stock_date', now()->format('Y-m-01'));
 
-
         // Extract month and year from date for display purposes
         $date = \Carbon\Carbon::createFromFormat('Y-m-d', $stockDate);
         $month = $date->month;
@@ -26,63 +27,45 @@ class StockController extends Controller
             ->where('stock_date', 'like', $date->format('Y-m') . '%')
             ->get();
 
-
-
         return view('stock.index', compact('stock', 'month', 'year', 'stockDate'));
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'medicine_id' => 'required|exists:medicines,id',
-            'quantity' => 'required|integer|min:0',
-            'stock_date' => 'required|date',
-        ]);
+        $validated = $request->validate(StockService::addRules());
 
-        $stock = Stock::where('user_id', Auth::id())
-            ->where('medicine_id', $validated['medicine_id'])
-            ->where('stock_date', $validated['stock_date'])
-            ->first();
+        StockService::addBalance(
+            Auth::user(),
+            (int) $validated['medicine_id'],
+            (int) $validated['quantity'],
+            (string) $validated['stock_date']
+        );
 
-        if ($stock) {
-            $stock->quantity += $validated['quantity'];
-            $stock->save();
-        } else {
-            Stock::create([
-                'user_id' => Auth::id(),
-                'medicine_id' => $validated['medicine_id'],
-                'stock_date' => $validated['stock_date'],
-                'quantity' => $validated['quantity'],
-                'dispensed' => 0,
-            ]);
-        }
-
-        return redirect()->route('stock.index', ['stock_date' => $validated['stock_date']])->with('success', 'تم إضافة الرصيد بنجاح');
+        return redirect()
+            ->route('stock.index', ['stock_date' => $validated['stock_date']])
+            ->with('success', 'تم إضافة الرصيد بنجاح');
     }
 
     public function update(Request $request, Stock $stock)
     {
-        $validated = $request->validate([
-            'quantity' => 'required|integer|min:0',
-            'dispensed' => 'required|integer|min:0',
-        ]);
+        $validated = $request->validate(StockService::editRules());
 
         if ($stock->user_id !== Auth::id()) {
             abort(403);
         }
 
-        $opening = $validated['quantity'];
-        $dispensed = $validated['dispensed'];
-
-        if ($dispensed > $opening) {
+        try {
+            StockService::updateBalance(
+                Auth::user(),
+                $stock,
+                (int) $validated['quantity'],
+                (int) $validated['dispensed']
+            );
+        } catch (DomainException $e) {
             return redirect()->route('stock.index')
-                ->withErrors(['error' => "المنصرف لا يمكن أن يكون أكبر من رصيد أول الشهر (المتاح: {$opening})"])
+                ->withErrors(['error' => $e->getMessage()])
                 ->withInput();
         }
-
-        $stock->quantity = $opening;
-        $stock->dispensed = $dispensed;
-        $stock->save();
 
         return redirect()->route('stock.index')->with('success', 'تم تحديث الرصيد بنجاح');
     }

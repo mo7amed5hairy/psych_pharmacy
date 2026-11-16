@@ -11,7 +11,7 @@ class Invoice extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'patient_name', 'referral_number'];
+    protected $fillable = ['client_uuid', 'user_id', 'patient_name', 'referral_number'];
 
     public function user(): BelongsTo
     {

@@ -270,6 +270,8 @@
 
             resetItemForm();
 
+            if (window.__singleDraftTouch) window.__singleDraftTouch();
+
         }
 
         function renderItems() {
@@ -323,6 +325,8 @@
             invoiceItems.splice(index, 1);
 
             renderItems();
+
+            if (window.__singleDraftTouch) window.__singleDraftTouch();
 
         }
 
@@ -710,10 +714,13 @@
 
             if (!referralNumber) { alert('الرجاء إدخال رقم التحويل'); return; }
 
+            if (window.__singleDraftTouch) window.__singleDraftTouch();
+
             const data = {
                 patient_name: patientName || '-',
                 referral_number: referralNumber,
                 invoice_date: date,
+                draft_uuid: window.__singleDraftUuid ? window.__singleDraftUuid() : undefined,
                 items: invoiceItems.map(item => ({
                     medicine_id: item.medicine_id,
                     quantity: item.quantity
@@ -737,8 +744,10 @@
                         for (let k in result.errors) msg += '- ' + result.errors[k].join('\n') + '\n';
                         alert(msg);
                     } else if (result && result.redirect) {
+                        if (window.__singleDraftSaved) window.__singleDraftSaved();
                         window.location.href = result.redirect;
                     } else if (result && result.message) {
+                        if (window.__singleDraftSaved) window.__singleDraftSaved();
                         alert(result.message);
                     }
                 })
@@ -922,11 +931,13 @@
             card.querySelector('.multi-price').value = '';
             card.querySelector('.multi-med-search').focus();
             multiRenderItems(idx);
+            if (window.__multiDraftTouch) window.__multiDraftTouch(idx);
         }
 
         function multiRemoveItem(idx, itemIndex) {
             multiInvoiceData[idx].items.splice(itemIndex, 1);
             multiRenderItems(idx);
+            if (window.__multiDraftTouch) window.__multiDraftTouch(idx);
         }
 
         function multiRenderItems(idx) {
@@ -956,6 +967,7 @@
             multiInvoiceData[idx].items[itemIndex].quantity = qty;
             multiInvoiceData[idx].items[itemIndex].subtotal = qty * multiInvoiceData[idx].items[itemIndex].price;
             multiRenderItems(idx);
+            if (window.__multiDraftTouch) window.__multiDraftTouch(idx);
         }
 
         function updateGrandTotal() {
@@ -997,10 +1009,14 @@
                 const items = multiInvoiceData[idx] ? multiInvoiceData[idx].items : [];
                 if (!ref) { alert('الرجاء إدخال رقم التحويل للفاتورة رقم ' + (idx + 1)); return; }
                 if (items.length === 0) { alert('الرجاء إضافة أصناف للفاتورة رقم ' + (idx + 1)); return; }
+                if (window.__multiDraftTouch) window.__multiDraftTouch(idx);
                 allData.push({
                     patient_name: patient || '-',
                     referral_number: ref,
                     invoice_date: date,
+                    draft_uuid: (multiInvoiceData[idx] && multiInvoiceData[idx].draftHandle)
+                        ? multiInvoiceData[idx].draftHandle.uuid
+                        : undefined,
                     items: items.filter(it => it.quantity > 0).map(it => ({ medicine_id: it.medicine_id, quantity: it.quantity }))
                 });
             }
@@ -1033,7 +1049,10 @@
                             let msg = 'فاتورة ' + (i + 1) + ': ';
                             for (let k in result.errors) msg += result.errors[k].join(', ');
                             errors.push(msg);
-                        } else { saved++; }
+                        } else {
+                            if (window.__multiDraftSaved) window.__multiDraftSaved(i);
+                            saved++;
+                        }
                         saveNext(i + 1);
                     })
                     .catch(err => { errors.push('فاتورة ' + (i + 1) + ': ' + err.message); saveNext(i + 1); });
@@ -1078,6 +1097,135 @@
                 focusable[idx + 1].focus();
             }
         });
+
+        // ===================== OFFLINE DRAFTS =====================
+        // The invoice screen is not a normal <form> submit, so it is wired
+        // manually to the shared drafts engine (localStorage + 1s server sync).
+
+        (function () {
+            if (!window.PsychDrafts) return;
+
+            // ---------- single invoice ----------
+            let singleDraftHandle = null;
+
+            function singleSnapshot() {
+                return {
+                    referral_number: (document.getElementById('referralNumber').value || '').trim(),
+                    patient_name: (document.getElementById('patientName').value || '').trim(),
+                    invoice_date: document.getElementById('invoiceDate').value || '',
+                    items: (invoiceItems || []).map(function (item) {
+                        return {
+                            medicine_id: item.medicine_id,
+                            quantity: item.quantity
+                        };
+                    })
+                };
+            }
+
+            function singleTouch() {
+                if (!singleDraftHandle) {
+                    singleDraftHandle = window.PsychDrafts.make('invoice');
+                }
+
+                window.PsychDrafts.save(singleDraftHandle, singleSnapshot());
+            }
+
+            window.__singleDraftTouch = singleTouch;
+
+            window.__singleDraftUuid = function () {
+                return singleDraftHandle ? singleDraftHandle.uuid : undefined;
+            };
+
+            window.__singleDraftSaved = function () {
+                if (singleDraftHandle) {
+                    window.PsychDrafts.close(singleDraftHandle);
+                }
+
+                singleDraftHandle = null;
+            };
+
+            ['referralNumber', 'invoiceDate', 'patientName'].forEach(function (id) {
+                const input = document.getElementById(id);
+                if (!input) return;
+                input.addEventListener('input', singleTouch);
+                input.addEventListener('change', singleTouch);
+            });
+
+            // ---------- multi invoices ----------
+            function multiSnapshot(idx) {
+                const cards = document.querySelectorAll('#multiInvoiceContainer .card');
+                const card = cards[idx];
+                if (!card) return null;
+
+                const data = multiInvoiceData[idx] || {};
+                const ref = card.querySelector('.multi-ref');
+                const patient = card.querySelector('.multi-patient');
+                const date = card.querySelector('.multi-date');
+
+                return {
+                    referral_number: ref ? ref.value.trim() : '',
+                    patient_name: patient ? patient.value.trim() : '',
+                    invoice_date: date ? date.value : '',
+                    items: (data.items || []).map(function (item) {
+                        return {
+                            medicine_id: item.medicine_id,
+                            quantity: item.quantity
+                        };
+                    })
+                };
+            }
+
+            function multiTouch(idx) {
+                const data = multiInvoiceData[idx];
+                if (!data) return;
+
+                const payload = multiSnapshot(idx);
+                if (!payload) return;
+
+                if (!data.draftHandle) {
+                    data.draftHandle = window.PsychDrafts.make('invoice');
+                }
+
+                window.PsychDrafts.save(data.draftHandle, payload);
+            }
+
+            window.__multiDraftTouch = multiTouch;
+
+            window.__multiDraftSaved = function (idx) {
+                const data = multiInvoiceData[idx];
+                if (data && data.draftHandle) {
+                    window.PsychDrafts.close(data.draftHandle);
+                    data.draftHandle = null;
+                }
+            };
+
+            // The multi cards are created dynamically, so listen on the container.
+            document.addEventListener('input', function (event) {
+                const container = document.getElementById('multiInvoiceContainer');
+                if (!container || !container.contains(event.target)) return;
+
+                const card = event.target.closest('.card');
+                if (!card) return;
+
+                const cards = Array.prototype.slice.call(container.querySelectorAll('.card'));
+                const idx = cards.indexOf(card);
+
+                if (idx >= 0) multiTouch(idx);
+            });
+
+            document.addEventListener('change', function (event) {
+                const container = document.getElementById('multiInvoiceContainer');
+                if (!container || !container.contains(event.target)) return;
+
+                const card = event.target.closest('.card');
+                if (!card) return;
+
+                const cards = Array.prototype.slice.call(container.querySelectorAll('.card'));
+                const idx = cards.indexOf(card);
+
+                if (idx >= 0) multiTouch(idx);
+            });
+        })();
     </script>
 
 @endpush

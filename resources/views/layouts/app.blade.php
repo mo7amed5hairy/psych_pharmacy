@@ -460,6 +460,60 @@
         .dataTables_filter {
             margin-bottom: 1rem !important;
         }
+
+        /* Offline drafts sync indicator */
+        .draft-sync-pill {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            z-index: 70;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, .15);
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            transition: background-color .2s, color .2s, border-color .2s;
+        }
+
+        .draft-sync-pill[hidden] {
+            display: none;
+        }
+
+        .draft-sync-pill[data-state="local"] {
+            background: #fef9c3;
+            border-color: #fde68a;
+            color: #854d0e;
+        }
+
+        .draft-sync-pill[data-state="syncing"] {
+            background: #e0f2fe;
+            border-color: #bae6fd;
+            color: #075985;
+        }
+
+        .draft-sync-pill[data-state="synced"] {
+            background: #dcfce7;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .draft-sync-pill[data-state="offline"] {
+            background: #ffe4e6;
+            border-color: #fecdd3;
+            color: #9f1239;
+        }
+
+        .draft-sync-pill[data-state="error"] {
+            background: #fee2e2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
     </style>
     @stack('styles')
 </head>
@@ -496,6 +550,13 @@
                             <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}"
                                 onclick="showLoader()">
                                 <i class="fas fa-home"></i><span>الرئيسية</span>
+                            </a>
+                        @endif
+
+                        @if(auth()->user()->employee_code === '1001')
+                            <a href="{{ route('drafts.index') }}"
+                                class="{{ request()->routeIs('drafts.*') ? 'active' : '' }}" onclick="showLoader()">
+                                <i class="fas fa-cloud-upload-alt text-amber-500"></i><span>المسودات</span>
                             </a>
                         @endif
 
@@ -891,6 +952,26 @@
             btn.classList.toggle('open');
         }
     </script>
+
+    @auth
+        {{-- Loaded before @stack('scripts') so page scripts can use window.PsychDrafts immediately. --}}
+        <div id="draftSyncPill" class="draft-sync-pill" data-state="idle" hidden>
+            <i class="fas fa-cloud" data-draft-icon></i>
+            <span data-draft-text>المسودات جاهزة</span>
+        </div>
+
+        <script>
+            window.PsychDraftConfig = {
+                userId: {{ auth()->id() }},
+                routes: {
+                    mine: @json(route('drafts.mine')),
+                    sync: @json(route('drafts.sync'))
+                },
+                csrf: @json(csrf_token())
+            };
+        </script>
+        <script src="{{ asset('js/drafts.js') }}"></script>
+    @endauth
 
     @stack('scripts')
 </body>

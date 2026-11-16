@@ -14,7 +14,8 @@
         <div class="mb-4 text-slate-700 font-bold border-b pb-2">
             <i class="fas fa-exchange-alt text-sky-600 ml-1"></i> تحويل الأرصدة إلى شهر جديد
         </div>
-        <form method="POST" action="{{ route('stock-transfer.transfer') }}" id="transferForm">
+        <form method="POST" action="{{ route('stock-transfer.transfer') }}" id="transferForm"
+            data-draft-type="stock_transfer">
             @csrf
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-3 items-end">
                 <div>

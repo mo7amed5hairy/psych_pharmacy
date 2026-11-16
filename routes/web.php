@@ -10,6 +10,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\DispensedMedicineController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DraftController;
 
 // Public routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -61,6 +62,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/check-referral-number', function (\Illuminate\Http\Request $r) {
         return response()->json(['exists' => false]);
     })->name('check-referral-number');
+
+    // Offline drafts (local-first autosave)
+    Route::get('/drafts/mine', [DraftController::class, 'mine'])->name('drafts.mine');
+    Route::post('/drafts/sync', [DraftController::class, 'sync'])->name('drafts.sync');
+
+    // Draft recovery — owner account only (employee_code = 1001)
+    Route::middleware('draft-admin')->group(function () {
+        Route::get('/drafts', [DraftController::class, 'index'])->name('drafts.index');
+        Route::post('/drafts/user/{user}/finalize', [DraftController::class, 'finalizeUser'])->name('drafts.finalize-user');
+        Route::post('/drafts/{draft}/finalize', [DraftController::class, 'finalize'])->name('drafts.finalize');
+        Route::delete('/drafts/{draft}', [DraftController::class, 'discard'])->name('drafts.discard');
+    });
 
     // Dispensed Medicines
     Route::get('/dispensed-medicines', [DispensedMedicineController::class, 'index'])->name('dispensed-medicines.index')->middleware('permission:dispensed_medicines');
