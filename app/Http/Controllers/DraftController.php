@@ -8,11 +8,15 @@ use App\Models\User;
 use App\Services\DraftFinalizer;
 use App\Services\MaintenanceService;
 use App\Support\DraftClosure;
+use App\Support\DraftErrorTranslator;
+use App\Support\DraftForm;
 use App\Support\DraftPresenter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class DraftController extends Controller
@@ -99,12 +103,19 @@ class DraftController extends Controller
      */
     public function sync(Request $request)
     {
-        $data = $request->validate([
-            'uuid' => ['required', 'string', 'uuid'],
-            'type' => ['required', 'string', Rule::in(Draft::types())],
-            'payload' => ['required', 'array'],
-            'revision' => ['nullable', 'integer', 'min:0'],
-        ]);
+        try {
+            $data = $request->validate([
+                'uuid' => ['required', 'string', 'uuid'],
+                'type' => ['required', 'string', Rule::in(Draft::types())],
+                'payload' => ['required', 'array'],
+                'revision' => ['nullable', 'integer', 'min:0'],
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => DraftErrorTranslator::translate($e->validator->errors()->first()),
+                'errors' => DraftErrorTranslator::translateMany($e->errors()),
+            ], 422);
+        }
 
         $payloadJson = json_encode($data['payload']);
 
@@ -223,6 +234,16 @@ class DraftController extends Controller
             $draft->id => DraftPresenter::summary($draft),
         ]);
 
+        $forms = [];
+
+        if ($drafts->isNotEmpty()) {
+            $formOptions = DraftForm::options();
+
+            $forms = $drafts->mapWithKeys(fn (Draft $draft) => [
+                $draft->id => DraftForm::schema($draft, $formOptions),
+            ])->all();
+        }
+
         $totalPending = $drafts->count();
         $usersCount = $groups->count();
 
@@ -235,7 +256,7 @@ class DraftController extends Controller
             'lastTransferAt' => $this->maintenance->lastTransferAt(),
         ];
 
-        return view('drafts.index', compact('groups', 'summaries', 'totalPending', 'usersCount', 'maintenance'));
+        return view('drafts.index', compact('groups', 'summaries', 'forms', 'totalPending', 'usersCount', 'maintenance'));
     }
 
     /**
@@ -326,7 +347,11 @@ class DraftController extends Controller
         try {
             $message = $this->finalizer->finalize($draft, Auth::user());
         } catch (Throwable $e) {
-            return $this->respond($draft, 'error', 'تعذر حفظ المسودة: ' . $e->getMessage());
+            return $this->respond(
+                $draft,
+                'error',
+                'تعذر حفظ المسودة: ' . DraftErrorTranslator::translate($e->getMessage())
+            );
         }
 
         return $this->respond($draft, 'success', $message);
@@ -350,7 +375,7 @@ class DraftController extends Controller
                 $this->finalizer->finalize($draft, Auth::user());
                 $saved++;
             } catch (Throwable $e) {
-                $errors[] = ($draft->title ?: $draft->typeLabel()) . ': ' . $e->getMessage();
+                $errors[] = ($draft->title ?: $draft->typeLabel()) . ': ' . DraftErrorTranslator::translate($e->getMessage());
             }
         }
 
@@ -427,8 +452,79 @@ class DraftController extends Controller
         );
     }
 
+    /**
+     * Admin: save the edits made in the per-type recovery form.
+     *
+     * The draft stays pending and keeps its original owner. Its UUID is
+     * rotated and the old one is closed, so a browser sync that was already
+     * in flight cannot bring the pre-edit payload back.
+     */
+    public function update(Request $request, Draft $draft)
+    {
+        if (!$draft->isPending()) {
+            if (request()->expectsJson()) {
+                return response()->json(['message' => 'هذه المسودة لم تعد معلّقة.'], 422);
+            }
+
+            return redirect()->route('drafts.index')->withErrors(['draft' => 'هذه المسودة لم تعد معلّقة.']);
+        }
+
+        try {
+            $data = $request->validate([
+                'payload' => ['required', 'array'],
+            ]);
+        } catch (ValidationException $e) {
+            $errors = DraftErrorTranslator::translateMany($e->errors());
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => DraftErrorTranslator::translate($e->validator->errors()->first()),
+                    'errors' => $errors,
+                ], 422);
+            }
+
+            return redirect()->route('drafts.index')->withErrors($errors);
+        }
+
+        $payloadJson = json_encode($data['payload']);
+
+        if ($payloadJson === false || strlen($payloadJson) > self::MAX_PAYLOAD_BYTES) {
+            if (request()->expectsJson()) {
+                return response()->json(['message' => 'حجم المسودة كبير جداً ولا يمكن حفظها'], 413);
+            }
+
+            return redirect()->route('drafts.index')->withErrors(['draft' => 'حجم المسودة كبير جداً ولا يمكن حفظها']);
+        }
+
+        $oldUuid = (string) $draft->uuid;
+        $newUuid = (string) Str::uuid();
+
+        DraftClosure::close((int) $draft->user_id, $oldUuid);
+
+        $draft->fill([
+            'uuid' => $newUuid,
+            'title' => Draft::titleFor($draft->type, $data['payload']),
+            'payload' => $data['payload'],
+            'revision' => (int) $draft->revision + 1,
+            'result' => null,
+        ])->save();
+
+        if (request()->expectsJson()) {
+            return response()->json([
+                'status' => Draft::STATUS_PENDING,
+                'uuid' => $newUuid,
+                'revision' => $draft->revision,
+                'message' => 'تم حفظ تعديلات المسودة.',
+            ]);
+        }
+
+        return redirect()->route('drafts.index')->with('success', 'تم حفظ تعديلات المسودة.');
+    }
+
     private function respond(Draft $draft, string $level, string $message)
     {
+        $message = DraftErrorTranslator::translate($message);
+
         if (request()->expectsJson()) {
             return response()->json([
                 'status' => $level,

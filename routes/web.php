@@ -75,6 +75,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/drafts/user/{user}/finalize', [DraftController::class, 'finalizeUser'])->name('drafts.finalize-user');
         Route::post('/drafts/user/{user}/discard', [DraftController::class, 'discardUser'])->name('drafts.discard-user');
         Route::post('/drafts/{draft}/finalize', [DraftController::class, 'finalize'])->name('drafts.finalize');
+        Route::post('/drafts/{draft}/update', [DraftController::class, 'update'])->name('drafts.update');
         Route::delete('/drafts/{draft}', [DraftController::class, 'discard'])->name('drafts.discard');
     });
 

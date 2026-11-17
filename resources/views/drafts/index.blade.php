@@ -168,7 +168,7 @@
 
                 @if($owner)
                     <div class="flex flex-wrap items-center gap-2">
-                        <form method="POST" action="{{ route('drafts.finalize-user', $owner) }}" data-save-once
+                        <form method="POST" action="{{ route('drafts.finalize-user', $owner) }}" data-save-once data-draft-finalize
                             onsubmit="return confirm('سيتم حفظ كل مسودات {{ addslashes($ownerName) }} في قاعدة البيانات باسم صاحبها. متابعة؟')">
                             @csrf
                             <button type="submit" class="btn btn-success">
@@ -208,7 +208,8 @@
                             </div>
 
                             <div class="flex items-center gap-2">
-                                <form method="POST" action="{{ route('drafts.finalize', $draft) }}" data-save-once
+                                <form method="POST" action="{{ route('drafts.finalize', $draft) }}" data-save-once data-draft-finalize
+                                    data-draft-edit-for="{{ $draft->id }}"
                                     onsubmit="return confirm('حفظ هذه المسودة في قاعدة البيانات باسم {{ addslashes($ownerName) }}؟')">
                                     @csrf
                                     <button type="submit" class="btn btn-success">
@@ -227,23 +228,111 @@
                             </div>
                         </div>
 
-                        @php $rows = $summaries[$draft->id] ?? []; @endphp
-
-                        @if(count($rows))
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 mt-3 text-sm">
-                                @foreach($rows as $row)
-                                    <div class="flex gap-2">
-                                        <span class="text-slate-500 shrink-0">{{ $row['label'] }}:</span>
-                                        <span class="font-semibold text-slate-800 break-all">{{ $row['value'] }}</span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
-
                         @if($draft->result)
                             <div class="mt-3 text-xs {{ $draft->status === 'pending' ? 'text-rose-600' : 'text-emerald-700' }}">
                                 {{ $draft->result }}
                             </div>
+                        @endif
+
+                        @php $form = $forms[$draft->id] ?? null; @endphp
+
+                        @if($form)
+                            <form class="draft-edit-form mt-4 border-t pt-4 no-loader" data-draft-edit-form
+                                  data-draft-id="{{ $draft->id }}"
+                                  data-update-url="{{ route('drafts.update', $draft) }}"
+                                  novalidate>
+                                @csrf
+
+                                @if(count($form['fields']))
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        @foreach($form['fields'] as $field)
+                                            <div>
+                                                @include('drafts.partials.field', [
+                                                    'name' => $field['name'],
+                                                    'field' => $field,
+                                                    'value' => $field['value'],
+                                                    'showLabel' => true,
+                                                ])
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                @foreach($form['groups'] as $group)
+                                    <div class="mt-4" data-draft-group data-group-name="{{ $group['name'] }}">
+                                        <div class="font-bold text-sm text-slate-800 mb-2">
+                                            <i class="fas fa-list-ul text-sky-600 ml-1"></i>{{ $group['label'] }}
+                                        </div>
+                                        <div class="w-full">
+                                            <table class="data w-full text-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="text-center text-xs">#</th>
+                                                        @foreach($group['columns'] as $column)
+                                                            <th class="text-right text-xs">{{ $column['label'] }}</th>
+                                                        @endforeach
+                                                        <th class="text-center text-xs">إجراء</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody data-group-body>
+                                                    @foreach($group['rows'] as $index => $row)
+                                                        <tr data-edit-row>
+                                                            <td class="text-center text-xs text-slate-500" data-row-number>{{ $loop->iteration }}</td>
+                                                            @foreach($group['columns'] as $column)
+                                                                <td>
+                                                                    @include('drafts.partials.field', [
+                                                                        'name' => $group['name'] . '[' . $index . '][' . $column['name'] . ']',
+                                                                        'field' => $column,
+                                                                        'value' => $row[$column['name']] ?? '',
+                                                                        'showLabel' => false,
+                                                                    ])
+                                                                </td>
+                                                            @endforeach
+                                                            <td class="text-center">
+                                                                <button type="button" class="btn btn-danger btn-sm" data-remove-row title="حذف الصف">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <button type="button" class="btn btn-ghost btn-sm mt-2" data-add-row>
+                                            <i class="fas fa-plus ml-1"></i>{{ $group['add_label'] }}
+                                        </button>
+                                        <template data-row-template>
+                                            <tr data-edit-row>
+                                                <td class="text-center text-xs text-slate-500" data-row-number></td>
+                                                @foreach($group['columns'] as $column)
+                                                    <td>
+                                                        @include('drafts.partials.field', [
+                                                            'name' => $group['name'] . '[__INDEX__][' . $column['name'] . ']',
+                                                            'field' => $column,
+                                                            'value' => '',
+                                                            'showLabel' => false,
+                                                        ])
+                                                    </td>
+                                                @endforeach
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-danger btn-sm" data-remove-row title="حذف الصف">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </div>
+                                @endforeach
+
+                                <div class="flex flex-wrap items-center justify-between gap-2 mt-4 border-t pt-3">
+                                    <span class="text-xs text-slate-500" data-edit-status>
+                                        عدّل الخانات ثم احفظ المسودة قبل الحفظ في قاعدة البيانات.
+                                    </span>
+                                    <button type="submit" class="btn btn-primary btn-sm" data-save-draft>
+                                        <i class="fas fa-save"></i> حفظ تعديلات المسودة
+                                    </button>
+                                </div>
+                            </form>
                         @endif
 
                         <details class="mt-3">
@@ -317,6 +406,96 @@
             font-size: .75rem;
             color: #64748b;
             margin-top: .25rem;
+        }
+
+        .draft-edit-form .btn-sm {
+            padding: .35rem .65rem;
+            font-size: .78rem;
+        }
+
+        .draft-edit-form table.data th,
+        .draft-edit-form table.data td {
+            padding: .45rem .55rem;
+        }
+
+        [data-edit-status].is-dirty {
+            color: #b45309;
+            font-weight: 700;
+        }
+
+        [data-edit-status].is-saved {
+            color: #047857;
+            font-weight: 700;
+        }
+
+        [data-combobox] {
+            position: relative;
+        }
+
+        .draft-native-select {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .draft-combobox-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .5rem;
+            text-align: right;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .draft-combobox-toggle span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .draft-combobox-panel {
+            position: absolute;
+            z-index: 60;
+            top: 100%;
+            right: 0;
+            left: 0;
+            margin-top: .25rem;
+            padding: .5rem;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: .6rem;
+            box-shadow: 0 12px 30px -12px rgba(15, 23, 42, .35);
+        }
+
+        .draft-combobox-options {
+            max-height: 14rem;
+            overflow-y: auto;
+            margin-top: .4rem;
+        }
+
+        .draft-combobox-option {
+            display: block;
+            width: 100%;
+            text-align: right;
+            padding: .35rem .5rem;
+            border-radius: .4rem;
+            font-size: .8rem;
+            color: #334155;
+        }
+
+        .draft-combobox-option:hover,
+        .draft-combobox-option.is-active {
+            background: #f0f9ff;
+            color: #0369a1;
+        }
+
+        .draft-combobox-option[aria-selected="true"] {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 700;
         }
     </style>
 @endpush
@@ -413,6 +592,14 @@
                 }
 
                 function render() {
+                    // A page change hides the draft containing an open dropdown.
+                    document.querySelectorAll('[data-combobox-panel]').forEach(function (panel) {
+                        panel.hidden = true;
+                    });
+                    document.querySelectorAll('[data-combobox-toggle]').forEach(function (toggle) {
+                        toggle.setAttribute('aria-expanded', 'false');
+                    });
+
                     var start = (current - 1) * pageSize;
                     var end = Math.min(start + pageSize, items.length);
 
@@ -498,6 +685,332 @@
 
             document.addEventListener('DOMContentLoaded', function () {
                 document.querySelectorAll('[data-draft-list]').forEach(initPagination);
+            });
+        })();
+
+        // Editable recovery forms: keep blank fields visible, let the admin
+        // fill/correct them, save the draft, then finalize or discard it.
+        (function () {
+            function setStatus(form, text, className) {
+                var status = form.querySelector('[data-edit-status]');
+
+                if (!status) {
+                    return;
+                }
+
+                status.textContent = text;
+                status.classList.remove('is-dirty', 'is-saved');
+
+                if (className) {
+                    status.classList.add(className);
+                }
+            }
+
+            function markDirty(form) {
+                form.dataset.dirty = '1';
+                setStatus(form, 'هناك تعديلات غير محفوظة — احفظ المسودة أولاً.', 'is-dirty');
+            }
+
+            function setPath(out, path, value) {
+                var parts = path.replace(/\[/g, '.').replace(/\]/g, '').split('.').filter(Boolean);
+                var cursor = out;
+
+                parts.forEach(function (part, index) {
+                    if (index === parts.length - 1) {
+                        cursor[part] = value;
+                        return;
+                    }
+
+                    if (!cursor[part] || typeof cursor[part] !== 'object') {
+                        cursor[part] = /^\d+$/.test(parts[index + 1]) ? [] : {};
+                    }
+
+                    cursor = cursor[part];
+                });
+            }
+
+            function collectPayload(form) {
+                var payload = {};
+
+                form.querySelectorAll('[data-field-name]').forEach(function (input) {
+                    setPath(payload, input.getAttribute('data-field-name'), input.value);
+                });
+
+                return payload;
+            }
+
+            function reindexRows(group) {
+                var body = group.querySelector('[data-group-body]');
+                var name = group.getAttribute('data-group-name');
+
+                if (!body || !name) {
+                    return;
+                }
+
+                var pattern = new RegExp('^' + name + '\\[\\d+\\]');
+
+                Array.prototype.slice.call(body.querySelectorAll('[data-edit-row]')).forEach(function (row, index) {
+                    var number = row.querySelector('[data-row-number]');
+
+                    if (number) {
+                        number.textContent = index + 1;
+                    }
+
+                    row.querySelectorAll('[data-field-name]').forEach(function (input) {
+                        var updated = input.getAttribute('data-field-name').replace(pattern, name + '[' + index + ']');
+                        input.setAttribute('data-field-name', updated);
+                        input.setAttribute('name', updated);
+                    });
+                });
+            }
+
+            function initCombobox(root) {
+                root.querySelectorAll('[data-combobox]:not([data-combobox-ready])').forEach(function (box) {
+                    box.dataset.comboboxReady = '1';
+
+                    var select = box.querySelector('select[data-field-name]');
+                    var toggle = box.querySelector('[data-combobox-toggle]');
+                    var label = box.querySelector('[data-combobox-label]');
+                    var panel = box.querySelector('[data-combobox-panel]');
+                    var search = box.querySelector('[data-combobox-search]');
+                    var options = Array.prototype.slice.call(box.querySelectorAll('[data-combobox-option]'));
+
+                    if (!select || !toggle || !label || !panel || !search || options.length === 0) {
+                        return;
+                    }
+
+                    function selectedOption() {
+                        return options.find(function (option) {
+                            return option.getAttribute('data-value') === select.value;
+                        });
+                    }
+
+                    function syncLabel() {
+                        var selected = selectedOption();
+
+                        label.textContent = selected && selected.getAttribute('data-value') !== ''
+                            ? selected.textContent.trim()
+                            : '— اختر —';
+
+                        options.forEach(function (option) {
+                            option.setAttribute('aria-selected', option === selected ? 'true' : 'false');
+                        });
+                    }
+
+                    function closePanel() {
+                        panel.hidden = true;
+                        toggle.setAttribute('aria-expanded', 'false');
+                        search.value = '';
+                        options.forEach(function (option) { option.hidden = false; });
+                    }
+
+                    toggle.addEventListener('click', function (event) {
+                        event.preventDefault();
+
+                        if (panel.hidden) {
+                            panel.hidden = false;
+                            toggle.setAttribute('aria-expanded', 'true');
+                            search.value = '';
+                            options.forEach(function (option) { option.hidden = false; });
+                            search.focus();
+                        } else {
+                            closePanel();
+                        }
+                    });
+
+                    search.addEventListener('input', function () {
+                        var query = search.value.trim().toLowerCase();
+
+                        options.forEach(function (option) {
+                            option.hidden = query !== '' && option.textContent.toLowerCase().indexOf(query) === -1;
+                        });
+                    });
+
+                    options.forEach(function (option) {
+                        option.addEventListener('click', function () {
+                            select.value = option.getAttribute('data-value');
+                            syncLabel();
+                            closePanel();
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                    });
+
+                    select.addEventListener('change', syncLabel);
+
+                    document.addEventListener('click', function (event) {
+                        if (!box.contains(event.target)) {
+                            closePanel();
+                        }
+                    });
+
+                    syncLabel();
+                });
+            }
+
+            function saveForm(form) {
+                if (form.dataset.saving === '1') {
+                    return Promise.resolve(true);
+                }
+
+                form.dataset.saving = '1';
+
+                var button = form.querySelector('[data-save-draft]');
+                var originalHtml = button ? button.innerHTML : '';
+
+                if (button) {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+                }
+
+                var token = document.querySelector('meta[name="csrf-token"]');
+
+                return fetch(form.getAttribute('data-update-url'), {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': token ? token.getAttribute('content') : ''
+                    },
+                    body: JSON.stringify({ payload: collectPayload(form) })
+                })
+                    .then(function (response) {
+                        return response.json().catch(function () { return {}; }).then(function (body) {
+                            if (!response.ok || (body.status && body.status !== 'pending')) {
+                                throw new Error(body.message || 'تعذر حفظ تعديلات المسودة.');
+                            }
+
+                            return true;
+                        });
+                    })
+                    .then(function () {
+                        form.dataset.dirty = '0';
+                        setStatus(form, 'تم حفظ التعديلات. يمكنك الآن الحفظ في قاعدة البيانات.', 'is-saved');
+
+                        return true;
+                    })
+                    .catch(function (error) {
+                        setStatus(form, error.message || 'تعذر حفظ تعديلات المسودة.', 'is-dirty');
+
+                        return false;
+                    })
+                    .finally(function () {
+                        form.dataset.saving = '0';
+
+                        if (button) {
+                            button.disabled = false;
+                            button.innerHTML = originalHtml;
+                        }
+                    });
+            }
+
+            function initForm(form) {
+                form.dataset.dirty = '0';
+                form.dataset.saving = '0';
+
+                initCombobox(form);
+
+                form.addEventListener('input', function () { markDirty(form); });
+                form.addEventListener('change', function () { markDirty(form); });
+
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    saveForm(form);
+                });
+
+                form.querySelectorAll('[data-draft-group]').forEach(function (group) {
+                    var body = group.querySelector('[data-group-body]');
+                    var template = group.querySelector('[data-row-template]');
+                    var addButton = group.querySelector('[data-add-row]');
+
+                    if (!body || !template || !addButton) {
+                        return;
+                    }
+
+                    addButton.addEventListener('click', function () {
+                        var index = body.querySelectorAll('[data-edit-row]').length;
+                        var html = template.innerHTML.replace(/__INDEX__/g, index);
+                        var wrapper = document.createElement('tbody');
+                        wrapper.innerHTML = html.trim();
+                        var row = wrapper.firstElementChild;
+
+                        if (!row) {
+                            return;
+                        }
+
+                        body.appendChild(row);
+                        initCombobox(row);
+                        markDirty(form);
+                    });
+
+                    body.addEventListener('click', function (event) {
+                        var button = event.target.closest('[data-remove-row]');
+
+                        if (!button) {
+                            return;
+                        }
+
+                        if (body.querySelectorAll('[data-edit-row]').length <= 1) {
+                            setStatus(form, 'يجب أن تبقى صف واحد على الأقل.', 'is-dirty');
+                            return;
+                        }
+
+                        button.closest('[data-edit-row]').remove();
+                        reindexRows(group);
+                        markDirty(form);
+                    });
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('[data-draft-edit-form]').forEach(initForm);
+
+                document.querySelectorAll('form[data-draft-finalize]').forEach(function (finalizeForm) {
+                    finalizeForm.addEventListener('submit', function (event) {
+                        if (event.defaultPrevented) {
+                            return;
+                        }
+
+                        var target = finalizeForm.getAttribute('data-draft-edit-for');
+                        var scope = target
+                            ? document
+                            : (finalizeForm.closest('.card') || document);
+                        var selector = target
+                            ? '[data-draft-edit-form][data-draft-id="' + target + '"]'
+                            : '[data-draft-edit-form]';
+                        var pending = Array.prototype.slice.call(scope.querySelectorAll(selector))
+                            .filter(function (form) { return form.dataset.dirty === '1'; });
+
+                        if (pending.length === 0) {
+                            return;
+                        }
+
+                        event.preventDefault();
+
+                        var chain = Promise.resolve(true);
+
+                        pending.forEach(function (form) {
+                            chain = chain.then(function (ok) {
+                                return ok ? saveForm(form) : false;
+                            });
+                        });
+
+                        chain.then(function (ok) {
+                            var button = finalizeForm.querySelector('button[type="submit"]');
+
+                            if (ok) {
+                                finalizeForm.submit();
+                                return;
+                            }
+
+                            if (button) {
+                                button.disabled = false;
+                                button.classList.remove('opacity-60', 'cursor-not-allowed');
+                                button.innerHTML = button.dataset.originalHtml || button.innerHTML;
+                            }
+                        });
+                    });
+                });
             });
         })();
     </script>

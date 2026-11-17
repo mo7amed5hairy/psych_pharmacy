@@ -8,6 +8,7 @@ use App\Models\Stock;
 use App\Models\UnitType;
 use App\Models\User;
 use App\Support\DraftClosure;
+use App\Support\DraftErrorTranslator;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -37,6 +38,12 @@ class DraftFinalizer
             return 'تم حفظ هذه المسودة مسبقاً';
         }
 
+        // The rest of the application runs under the English locale. While a
+        // draft is validated here, generate Arabic messages directly from the
+        // validator so no English text can reach the recovery screen.
+        $previousLocale = app()->getLocale();
+        app()->setLocale('ar');
+
         try {
             return DB::transaction(function () use ($draft, $actor) {
                 /** @var Draft|null $locked */
@@ -59,16 +66,23 @@ class DraftFinalizer
                 return $message;
             });
         } catch (ValidationException $e) {
-            $message = $e->validator->errors()->first();
+            $message = DraftErrorTranslator::translate($e->validator->errors()->first());
             Draft::whereKey($draft->getKey())->update(['result' => 'فشل الحفظ: ' . $message]);
             $draft->refresh();
 
             throw new DomainException($message, 0, $e);
         } catch (Throwable $e) {
-            Draft::whereKey($draft->getKey())->update(['result' => 'فشل الحفظ: ' . $e->getMessage()]);
+            $message = DraftErrorTranslator::translate($e->getMessage());
+            Draft::whereKey($draft->getKey())->update(['result' => 'فشل الحفظ: ' . $message]);
             $draft->refresh();
 
-            throw $e;
+            if ($message === $e->getMessage()) {
+                throw $e;
+            }
+
+            throw new DomainException($message, 0, $e);
+        } finally {
+            app()->setLocale($previousLocale);
         }
     }
 

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\UserPermission;
 use App\Services\InvoiceService;
 use App\Support\DraftClosure;
+use App\Support\DraftErrorTranslator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -199,7 +200,10 @@ class DraftTest extends TestCase
             'payload' => ['foo' => 'bar'],
         ]);
 
-        $response->assertStatus(422);
+        $response->assertStatus(422)
+            ->assertJson(['message' => 'القيمة المختارة لـ نوع المسودة غير صحيحة.'])
+            ->assertJsonMissing(['message' => 'The selected type is invalid.']);
+
         $this->assertDatabaseCount('drafts', 0);
     }
 
@@ -563,6 +567,312 @@ class DraftTest extends TestCase
             ->assertJson(['status' => Draft::STATUS_FINALIZED]);
 
         $this->assertDatabaseMissing('drafts', ['uuid' => $first->uuid]);
+    }
+
+    public function test_the_recovery_page_renders_an_editable_form_matching_every_draft_type(): void
+    {
+        $admin = $this->makeAdmin();
+        $owner = $this->makeUser();
+        $medicine = $this->makeMedicine();
+        $unit = UnitType::firstOrFail();
+        $stock = $this->makeStock($owner, $medicine, 10, '2026-11-01');
+
+        $rows = [];
+
+        for ($i = 0; $i < 12; $i++) {
+            $rows[] = [
+                'referral_number' => 'R-' . $i,
+                'dispense_date' => '2026-11-10',
+                'medicine_id' => $medicine->id,
+                'quantity' => 1,
+            ];
+        }
+
+        // This blank row is what produces "The medicines.12.medicine_id field is required."
+        $rows[] = ['referral_number' => '', 'dispense_date' => '', 'medicine_id' => '', 'quantity' => ''];
+
+        $this->makeDraft($owner, 'invoice', [
+            'referral_number' => 'TR-FORM',
+            'invoice_date' => '2026-11-10',
+            'patient_name' => 'مريض',
+            'items' => [['medicine_id' => $medicine->id, 'quantity' => 2]],
+        ]);
+        $this->makeDraft($owner, 'dispensed_medicine', ['medicines' => $rows]);
+        $this->makeDraft($owner, 'medicine', [
+            'medicines' => [[
+                'name' => 'دواء',
+                'unit_type_id' => $unit->id,
+                'price_hotline' => 10,
+                'price_contract' => 8,
+                'price_clinic' => 12,
+            ]],
+        ]);
+        $this->makeDraft($owner, 'medicine_edit', [
+            'medicine_id' => $medicine->id,
+            'name' => $medicine->name,
+            'unit_type_id' => $unit->id,
+            'price_hotline' => 11,
+            'price_contract' => 9,
+            'price_clinic' => 13,
+        ]);
+        $this->makeDraft($owner, 'stock', [
+            'stock_date' => '2026-11-01',
+            'medicine_id' => $medicine->id,
+            'quantity' => 100,
+        ]);
+        $this->makeDraft($owner, 'stock_edit', [
+            'stock_id' => $stock->id,
+            'quantity' => 10,
+            'dispensed' => 2,
+        ]);
+        $this->makeDraft($owner, 'stock_transfer', [
+            'from' => '2026-11-01',
+            'to' => '2026-11-30',
+            'month' => 12,
+            'year' => 2026,
+        ]);
+        $this->makeDraft($owner, 'unit', ['name' => 'وحدة']);
+        $this->makeDraft($owner, 'unit_edit', ['unit_type_id' => $unit->id, 'name' => 'وحدة معدلة']);
+
+        $response = $this->actingAs($admin)->get(route('drafts.index'))->assertOk();
+        $html = $response->getContent();
+
+        // Every type renders its real form field names.
+        $response->assertSee('name="referral_number"', false)
+            ->assertSee('name="invoice_date"', false)
+            ->assertSee('name="patient_name"', false)
+            ->assertSee('name="items[0][medicine_id]"', false)
+            ->assertSee('name="items[0][quantity]"', false)
+            ->assertSee('name="medicines[0][dispense_date]"', false)
+            ->assertSee('name="medicines[12][medicine_id]"', false)
+            ->assertSee('name="medicines[12][quantity]"', false)
+            ->assertSee('name="medicines[0][price_contract]"', false)
+            ->assertSee('name="medicine_id"', false)
+            ->assertSee('name="stock_date"', false)
+            ->assertSee('name="stock_id"', false)
+            ->assertSee('name="quantity"', false)
+            ->assertSee('name="dispensed"', false)
+            ->assertSee('name="from"', false)
+            ->assertSee('name="to"', false)
+            ->assertSee('name="month"', false)
+            ->assertSee('name="year"', false)
+            ->assertSee('name="unit_type_id"', false)
+            ->assertSee('data-draft-edit-form', false)
+            ->assertSee('data-add-row', false)
+            ->assertSee('data-row-template', false)
+            ->assertSee('data-combobox-toggle', false)
+            ->assertSee('data-combobox-search', false)
+            ->assertSee('data-combobox-option', false)
+            ->assertSee('placeholder="ابحث..."', false);
+
+        // Prefilled values are selected/filled, while the blank row stays blank.
+        $this->assertMatchesRegularExpression('/name="referral_number"[^>]*value="TR-FORM"/', $html);
+        $this->assertMatchesRegularExpression('/name="medicines\[12\]\[quantity\]"[^>]*value=""/', $html);
+        $this->assertDoesNotMatchRegularExpression(
+            '/name="medicines\[12\]\[medicine_id\]"[\s\S]{0,300}?selected/',
+            $html
+        );
+        $this->assertMatchesRegularExpression('/value="' . $medicine->id . '"\s+selected/', $html);
+    }
+
+    public function test_admin_can_fill_a_blank_dispensed_row_and_finalize_it(): void
+    {
+        $admin = $this->makeAdmin();
+        $owner = $this->makeUser();
+        $medicine = $this->makeMedicine();
+        $this->makeStock($owner, $medicine, 10, '2026-11-01');
+
+        $draft = $this->makeDraft($owner, 'dispensed_medicine', [
+            'medicines' => [
+                [
+                    'referral_number' => 'R-1',
+                    'dispense_date' => '2026-11-10',
+                    'medicine_id' => $medicine->id,
+                    'quantity' => 1,
+                ],
+                [
+                    'referral_number' => '',
+                    'dispense_date' => '',
+                    'medicine_id' => '',
+                    'quantity' => '',
+                ],
+            ],
+        ]);
+
+        $draft->forceFill(['result' => 'فشل الحفظ: The medicines.1.medicine_id field is required.'])->save();
+
+        $corrected = [
+            'medicines' => [
+                [
+                    'referral_number' => 'R-1',
+                    'dispense_date' => '2026-11-10',
+                    'medicine_id' => $medicine->id,
+                    'quantity' => 1,
+                ],
+                [
+                    'referral_number' => 'R-2',
+                    'dispense_date' => '2026-11-11',
+                    'medicine_id' => $medicine->id,
+                    'quantity' => 2,
+                ],
+            ],
+        ];
+
+        $this->actingAs($admin)
+            ->postJson(route('drafts.update', $draft), ['payload' => $corrected])
+            ->assertOk()
+            ->assertJson(['status' => Draft::STATUS_PENDING]);
+
+        $this->assertSame($corrected, $draft->fresh()->payload);
+        $this->assertNull($draft->fresh()->result);
+
+        $this->actingAs($admin)
+            ->post(route('drafts.finalize', $draft))
+            ->assertRedirect(route('drafts.index'));
+
+        $this->assertDatabaseMissing('drafts', ['id' => $draft->id]);
+        $this->assertSame(2, DispensedMedicine::count());
+        $this->assertSame(3, (int) Stock::where('user_id', $owner->id)->first()->dispensed);
+    }
+
+    public function test_english_validation_messages_are_translated_to_arabic(): void
+    {
+        $this->assertSame(
+            'فشل الحفظ: خانة الصنف مطلوبة.',
+            DraftErrorTranslator::translate('فشل الحفظ: The medicines.12.medicine_id field is required.')
+        );
+
+        $this->assertSame(
+            'خانة الكمية يجب أن تكون رقماً صحيحاً.',
+            DraftErrorTranslator::translate('The items.0.quantity field must be an integer.')
+        );
+
+        $this->assertSame(
+            'القيمة المختارة لـ الوحدة غير صحيحة.',
+            DraftErrorTranslator::translate('The selected unit_type_id is invalid.')
+        );
+
+        // Existing Arabic domain messages must stay untouched, and unknown
+        // English errors must never leak to the recovery screen.
+        $this->assertSame(
+            'الدواء غير موجود',
+            DraftErrorTranslator::translate('الدواء غير موجود')
+        );
+
+        $this->assertSame(
+            'حدث خطأ أثناء حفظ المسودة. يرجى مراجعة البيانات والمحاولة مرة أخرى.',
+            DraftErrorTranslator::translate('SQLSTATE[42S22]: Column not found: 1054 Unknown column')
+        );
+    }
+
+    public function test_finalize_reports_validation_errors_in_arabic_on_the_drafts_page(): void
+    {
+        $admin = $this->makeAdmin();
+        $owner = $this->makeUser();
+
+        $draft = $this->makeDraft($owner, 'dispensed_medicine', [
+            'medicines' => [
+                ['medicine_id' => '', 'quantity' => '', 'dispense_date' => ''],
+            ],
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('drafts.finalize', $draft))
+            ->assertRedirect(route('drafts.index'))
+            ->assertSessionHasErrors(['draft' => 'تعذر حفظ المسودة: خانة الصنف مطلوبة.']);
+
+        $this->assertSame(
+            'فشل الحفظ: خانة الصنف مطلوبة.',
+            $draft->fresh()->result
+        );
+
+        $this->actingAs($admin)
+            ->get(route('drafts.index'))
+            ->assertOk()
+            ->assertSee('تعذر حفظ المسودة: خانة الصنف مطلوبة.')
+            ->assertDontSee('field is required');
+    }
+
+    public function test_admin_can_edit_a_draft_and_finalize_the_corrected_payload(): void
+    {
+        $admin = $this->makeAdmin();
+        $owner = $this->makeUser();
+        $medicine = $this->makeMedicine();
+        $this->makeStock($owner, $medicine, 10, '2026-11-01');
+
+        $draft = $this->makeDraft($owner, 'invoice', [
+            'referral_number' => 'TR-EDIT',
+            'patient_name' => 'مريض',
+            'invoice_date' => '2026-11-10',
+            'items' => [
+                ['medicine_id' => null, 'quantity' => 0],
+            ],
+        ], Draft::STATUS_PENDING);
+
+        $draft->forceFill(['result' => 'فشل الحفظ: medicine_id مطلوب'])->save();
+
+        $oldUuid = $draft->uuid;
+
+        $corrected = [
+            'referral_number' => 'TR-EDIT',
+            'patient_name' => 'مريض بعد التعديل',
+            'invoice_date' => '2026-11-10',
+            'items' => [
+                ['medicine_id' => $medicine->id, 'quantity' => 2],
+            ],
+        ];
+
+        $this->actingAs($admin)
+            ->postJson(route('drafts.update', $draft), ['payload' => $corrected])
+            ->assertOk()
+            ->assertJson(['status' => Draft::STATUS_PENDING]);
+
+        $draft->refresh();
+
+        $this->assertSame($corrected, $draft->payload);
+        $this->assertSame('فاتورة TR-EDIT', $draft->title);
+        $this->assertSame(2, $draft->revision);
+        $this->assertNull($draft->result);
+        $this->assertNotSame($oldUuid, $draft->uuid);
+        $this->assertTrue(DraftClosure::isClosed($owner->id, $oldUuid));
+
+        // A sync that was already in flight cannot restore the broken payload.
+        $this->actingAs($owner)
+            ->postJson(route('drafts.sync'), [
+                'uuid' => $oldUuid,
+                'type' => 'invoice',
+                'revision' => 99,
+                'payload' => ['items' => [['medicine_id' => null, 'quantity' => 0]]],
+            ])
+            ->assertOk()
+            ->assertJson(['status' => Draft::STATUS_FINALIZED]);
+
+        $this->assertSame(1, Draft::count());
+        $this->assertSame($corrected, $draft->fresh()->payload);
+
+        $this->actingAs($admin)
+            ->post(route('drafts.finalize', $draft))
+            ->assertRedirect(route('drafts.index'));
+
+        $this->assertDatabaseMissing('drafts', ['id' => $draft->id]);
+
+        $invoice = Invoice::where('referral_number', 'TR-EDIT')->firstOrFail();
+        $this->assertSame('مريض بعد التعديل', $invoice->patient_name);
+        $this->assertSame($draft->uuid, $invoice->client_uuid);
+        $this->assertSame(2, (int) $invoice->items()->sum('quantity'));
+    }
+
+    public function test_a_user_without_the_drafts_permission_cannot_edit_a_draft(): void
+    {
+        $owner = $this->makeUser();
+        $intruder = $this->makeUser('2222', 'هدير');
+        $draft = $this->makeDraft($owner, 'unit', ['name' => 'وحدة']);
+
+        $this->actingAs($intruder)
+            ->postJson(route('drafts.update', $draft), ['payload' => ['name' => 'تعديل ممنوع']])
+            ->assertStatus(403);
+
+        $this->assertSame('وحدة', $draft->fresh()->payload['name']);
     }
 
     public function test_the_drafts_page_renders_delete_buttons_and_javascript_pagination(): void
