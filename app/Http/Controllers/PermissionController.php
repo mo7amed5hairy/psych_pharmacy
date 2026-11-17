@@ -10,20 +10,17 @@ use Illuminate\Database\Schema\Blueprint;
 
 class PermissionController extends Controller
 {
-    public function index()
+    /** Accounts allowed to manage user permissions. */
+    private const ADMIN_CODES = ['1001', '7777', '1010'];
+
+    /** Accounts that start with every module enabled unless explicitly switched off. */
+    private const DEFAULT_ALL_CODES = ['7777', '1010'];
+
+    /** @return array<string, string> module slug => Arabic label */
+    public static function modules(): array
     {
-        $adminCodes = ['7777', '1010'];
-        if (!in_array(auth()->user()->employee_code, $adminCodes)) {
-            return redirect()->route('unauthorized');
-        }
-
-        // Failsafe: Create table if missing
-        if (!Schema::hasTable('user_permissions')) {
-            $this->initTable();
-        }
-
-        $users = User::with('permissions')->get();
-        $modules = [
+        return [
+            'drafts' => 'المسودات',
             'dashboard' => 'الرئيسية',
             'users' => 'إدارة المستخدمين',
             'medicines' => 'قاموس الأدوية',
@@ -36,30 +33,65 @@ class PermissionController extends Controller
             'report_monthly' => 'كشف المنصرف',
             'report_inventory' => 'الجرد',
         ];
+    }
+
+    public function index()
+    {
+        if (!in_array(auth()->user()->employee_code, self::ADMIN_CODES)) {
+            return redirect()->route('unauthorized');
+        }
+
+        // Failsafe: Create table if missing
+        if (!Schema::hasTable('user_permissions')) {
+            $this->initTable();
+        }
+
+        $users = User::with('permissions')->get();
+        $modules = self::modules();
 
         return view('permissions.index', compact('users', 'modules'));
     }
 
     public function update(Request $request)
     {
-        $adminCodes = ['7777', '1010'];
-        if (!in_array(auth()->user()->employee_code, $adminCodes)) {
+        if (!in_array(auth()->user()->employee_code, self::ADMIN_CODES)) {
             return abort(403);
         }
 
+        $modules = array_keys(self::modules());
         $data = $request->input('perms', []); // user_id => [module1, module2]
 
-        // Clear all permissions and rebuild
-        // Warning: This is a simple implementation. In production, use sync or individual updates.
+        // Clear all permissions and rebuild from the submitted switches.
         UserPermission::truncate();
 
-        foreach ($data as $userId => $modules) {
-            foreach ($modules as $module => $on) {
+        foreach ($data as $userId => $selected) {
+            foreach ($selected as $module => $on) {
+                if (!in_array($module, $modules, true)) {
+                    continue;
+                }
+
                 UserPermission::create([
                     'user_id' => $userId,
                     'module' => $module,
-                    'is_granted' => true
+                    'is_granted' => true,
                 ]);
+            }
+        }
+
+        // 7777 and 1010 are granted every module by default. To let an admin
+        // switch a module off for them, store an explicit "off" row instead of
+        // simply omitting it.
+        foreach (User::whereIn('employee_code', self::DEFAULT_ALL_CODES)->get() as $user) {
+            $selected = array_keys($data[$user->id] ?? []);
+
+            foreach ($modules as $module) {
+                if (!in_array($module, $selected, true)) {
+                    UserPermission::create([
+                        'user_id' => $user->id,
+                        'module' => $module,
+                        'is_granted' => false,
+                    ]);
+                }
             }
         }
 
@@ -69,8 +101,7 @@ class PermissionController extends Controller
     // Failsafe to create the table if migrations failed
     public function initTable()
     {
-        $adminCodes = ['7777', '1010'];
-        if (!auth()->check() || !in_array(auth()->user()->employee_code, $adminCodes)) {
+        if (!auth()->check() || !in_array(auth()->user()->employee_code, self::ADMIN_CODES)) {
             return "Unauthorized";
         }
 

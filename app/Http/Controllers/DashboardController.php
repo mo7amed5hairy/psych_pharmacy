@@ -5,11 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Medicine;
 use App\Models\Invoice;
 use App\Models\Stock;
+use App\Services\MaintenanceService;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    public function __construct(private MaintenanceService $maintenance)
+    {
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -39,10 +44,28 @@ class DashboardController extends Controller
                 ->count(),
         ];
 
-        $lastRun = \Illuminate\Support\Facades\Cache::store('file')->get('scheduler_heartbeat');
-        $schedulerActive = $lastRun && \Carbon\Carbon::parse($lastRun)->gt(now()->subMinutes(5));
+        $stockAutoTransfer = [
+            'enabled' => $this->maintenance->transferEnabled(),
+            'nextDueLabel' => $this->dueLabel($this->maintenance->nextTransferDue()),
+            'lastRun' => $this->maintenance->lastTransferAt(),
+        ];
 
-        return view('dashboard', compact('stats', 'user', 'schedulerActive', 'lastRun'));
+        return view('dashboard', compact('stats', 'user', 'stockAutoTransfer'));
 
+    }
+
+    private function dueLabel(?string $ym): string
+    {
+        if (!$ym) {
+            return 'غير محدد';
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m', $ym)
+                ->locale('ar')
+                ->translatedFormat('F Y');
+        } catch (\Throwable) {
+            return $ym;
+        }
     }
 }

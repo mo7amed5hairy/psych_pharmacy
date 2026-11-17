@@ -67,10 +67,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/drafts/mine', [DraftController::class, 'mine'])->name('drafts.mine');
     Route::post('/drafts/sync', [DraftController::class, 'sync'])->name('drafts.sync');
 
-    // Draft recovery — owner account only (employee_code = 1001)
+    // Draft recovery - owner account (1001) or users granted the "drafts" permission
     Route::middleware('draft-admin')->group(function () {
         Route::get('/drafts', [DraftController::class, 'index'])->name('drafts.index');
+        Route::post('/drafts/settings/purge', [DraftController::class, 'togglePurge'])->name('drafts.settings.purge');
+        Route::post('/drafts/settings/transfer', [DraftController::class, 'toggleStockTransfer'])->name('drafts.settings.transfer');
         Route::post('/drafts/user/{user}/finalize', [DraftController::class, 'finalizeUser'])->name('drafts.finalize-user');
+        Route::post('/drafts/user/{user}/discard', [DraftController::class, 'discardUser'])->name('drafts.discard-user');
         Route::post('/drafts/{draft}/finalize', [DraftController::class, 'finalize'])->name('drafts.finalize');
         Route::delete('/drafts/{draft}', [DraftController::class, 'discard'])->name('drafts.discard');
     });

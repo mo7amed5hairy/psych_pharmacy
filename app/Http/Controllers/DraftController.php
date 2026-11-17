@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Draft;
+use App\Models\Invoice;
 use App\Models\User;
 use App\Services\DraftFinalizer;
+use App\Services\MaintenanceService;
+use App\Support\DraftClosure;
 use App\Support\DraftPresenter;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -15,8 +19,10 @@ class DraftController extends Controller
 {
     private const MAX_PAYLOAD_BYTES = 512 * 1024;
 
-    public function __construct(private DraftFinalizer $finalizer)
-    {
+    public function __construct(
+        private DraftFinalizer $finalizer,
+        private MaintenanceService $maintenance
+    ) {
     }
 
     /**
@@ -24,10 +30,47 @@ class DraftController extends Controller
      */
     public function mine()
     {
-        $pending = Draft::where('user_id', Auth::id())
+        $userId = (int) Auth::id();
+        $closed = DraftClosure::closedUuids($userId);
+
+        // Heal any row that a delayed sync may have re-created after the real
+        // save: the drafts table must only contain unsaved data.
+        if ($closed !== []) {
+            Draft::where('user_id', $userId)->whereIn('uuid', $closed)->delete();
+        }
+
+        $pendingRows = Draft::where('user_id', $userId)
             ->pending()
             ->orderBy('updated_at')
-            ->get()
+            ->get();
+
+        // Heal invoice drafts whose real invoice already exists but whose
+        // response never reached the browser (connection dropped after the
+        // server committed). One query for the whole batch.
+        $invoiceUuids = $pendingRows->where('type', 'invoice')->pluck('uuid')->all();
+
+        if ($invoiceUuids !== []) {
+            $savedUuids = Invoice::where('user_id', $userId)
+                ->whereIn('client_uuid', $invoiceUuids)
+                ->pluck('client_uuid')
+                ->filter()
+                ->values()
+                ->all();
+
+            if ($savedUuids !== []) {
+                DraftClosure::closeMany($userId, array_map('strval', $savedUuids));
+
+                Draft::where('user_id', $userId)->whereIn('uuid', $savedUuids)->delete();
+
+                $pendingRows = $pendingRows
+                    ->whereNotIn('uuid', $savedUuids)
+                    ->values();
+
+                $closed = array_values(array_unique(array_merge($closed, $savedUuids)));
+            }
+        }
+
+        $pending = $pendingRows
             ->map(fn (Draft $draft) => [
                 'uuid' => $draft->uuid,
                 'type' => $draft->type,
@@ -37,15 +80,17 @@ class DraftController extends Controller
                 'updated_at' => optional($draft->updated_at)->toIso8601String(),
             ]);
 
-        // Tombstones kept briefly so every device deletes its local copy.
-        $closed = Draft::where('user_id', Auth::id())
+        // Legacy tombstones from older versions are still reported briefly so
+        // every device deletes its local copy.
+        $legacyClosed = Draft::where('user_id', $userId)
             ->whereIn('status', [Draft::STATUS_FINALIZED, Draft::STATUS_DISCARDED])
-            ->where('updated_at', '>=', now()->subDays(14))
-            ->pluck('uuid');
+            ->where('updated_at', '>=', now()->subDays(DraftClosure::TTL_DAYS))
+            ->pluck('uuid')
+            ->all();
 
         return response()->json([
             'pending' => $pending,
-            'closed' => $closed,
+            'closed' => array_values(array_unique(array_merge($closed, $legacyClosed))),
         ]);
     }
 
@@ -65,6 +110,29 @@ class DraftController extends Controller
 
         if ($payloadJson === false || strlen($payloadJson) > self::MAX_PAYLOAD_BYTES) {
             return response()->json(['message' => 'حجم المسودة كبير جداً ولا يمكن حفظها'], 413);
+        }
+
+        $userId = (int) Auth::id();
+
+        // The real data was already saved and the draft deleted: a delayed
+        // request must never re-create it.
+        if (DraftClosure::isClosed($userId, $data['uuid'])) {
+            Draft::where('uuid', $data['uuid'])->where('user_id', $userId)->delete();
+
+            return $this->closedResponse();
+        }
+
+        // The server may have committed the invoice while the browser lost the
+        // response. client_uuid holds the draft UUID, so we can detect it and
+        // drop the draft instead of keeping saved data around.
+        if (
+            $data['type'] === 'invoice'
+            && Invoice::where('user_id', $userId)->where('client_uuid', $data['uuid'])->exists()
+        ) {
+            DraftClosure::close($userId, $data['uuid']);
+            Draft::where('uuid', $data['uuid'])->where('user_id', $userId)->delete();
+
+            return $this->closedResponse();
         }
 
         /** @var Draft|null $draft */
@@ -114,9 +182,25 @@ class DraftController extends Controller
             }
         }
 
+        // A save may have finished while this request was in flight.
+        if (DraftClosure::isClosed($userId, $data['uuid'])) {
+            $draft->delete();
+
+            return $this->closedResponse();
+        }
+
         return response()->json([
             'status' => Draft::STATUS_PENDING,
             'revision' => $draft->revision,
+        ]);
+    }
+
+    private function closedResponse()
+    {
+        return response()->json([
+            'status' => Draft::STATUS_FINALIZED,
+            'revision' => 0,
+            'result' => 'تم حفظ هذه المسودة في قاعدة البيانات مسبقاً',
         ]);
     }
 
@@ -142,7 +226,96 @@ class DraftController extends Controller
         $totalPending = $drafts->count();
         $usersCount = $groups->count();
 
-        return view('drafts.index', compact('groups', 'summaries', 'totalPending', 'usersCount'));
+        $maintenance = [
+            'purgeEnabled' => $this->maintenance->purgeEnabled(),
+            'lastPurgeAt' => $this->maintenance->lastPurgeAt(),
+            'transferEnabled' => $this->maintenance->transferEnabled(),
+            'nextTransferDue' => $this->maintenance->nextTransferDue(),
+            'nextTransferLabel' => $this->dueLabel($this->maintenance->nextTransferDue()),
+            'lastTransferAt' => $this->maintenance->lastTransferAt(),
+        ];
+
+        return view('drafts.index', compact('groups', 'summaries', 'totalPending', 'usersCount', 'maintenance'));
+    }
+
+    /**
+     * Admin toggle: run the purge now and keep it running daily.
+     */
+    public function togglePurge()
+    {
+        if ($denied = $this->maintenanceAccessDenied()) {
+            return $denied;
+        }
+
+        if ($this->maintenance->purgeEnabled()) {
+            $this->maintenance->disablePurge();
+
+            return back()->with('success', 'تم إيقاف التنظيف التلقائي للمسودات.');
+        }
+
+        $deleted = $this->maintenance->enablePurge();
+
+        return back()->with(
+            'success',
+            "تم تفعيل التنظيف التلقائي للمسودات، وتم حذف {$deleted} مسودة مغلقة أقدم من "
+                . MaintenanceService::PURGE_DAYS . ' يوم.'
+        );
+    }
+
+    /**
+     * Admin toggle: enable/disable the monthly stock carry-over.
+     */
+    public function toggleStockTransfer()
+    {
+        if ($denied = $this->maintenanceAccessDenied()) {
+            return $denied;
+        }
+
+        if ($this->maintenance->transferEnabled()) {
+            $this->maintenance->disableTransfer();
+
+            return back()->with('success', 'تم إيقاف الترحيل التلقائي لأرصدة الأدوية.');
+        }
+
+        $this->maintenance->enableTransfer();
+
+        return back()->with(
+            'success',
+            'تم تفعيل الترحيل التلقائي لأرصدة الأدوية. التنفيذ القادم: '
+                . $this->dueLabel($this->maintenance->nextTransferDue())
+                . ' (لا يتم تغيير أرصدة الشهر الحالي).'
+        );
+    }
+
+    /**
+     * Maintenance tools belong only to the owner account (employee 1001).
+     */
+    private function maintenanceAccessDenied()
+    {
+        if (Auth::user()?->employee_code === '1001') {
+            return null;
+        }
+
+        if (request()->expectsJson()) {
+            return response()->json(['message' => 'غير مسموح لك بتغيير إعدادات الصيانة.'], 403);
+        }
+
+        return redirect()->route('unauthorized');
+    }
+
+    private function dueLabel(?string $ym): string
+    {
+        if (!$ym) {
+            return 'غير محدد';
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m', $ym)
+                ->locale('ar')
+                ->translatedFormat('F Y');
+        } catch (Throwable) {
+            return $ym;
+        }
     }
 
     /**
@@ -202,19 +375,56 @@ class DraftController extends Controller
     public function discard(Draft $draft)
     {
         if ($draft->isPending()) {
-            $draft->forceFill([
-                'status' => Draft::STATUS_DISCARDED,
-                'finalized_at' => now(),
-                'finalized_by' => Auth::id(),
-                'result' => 'تم تجاهل المسودة بواسطة المسؤول',
-            ])->save();
+            $userId = (int) $draft->user_id;
+            $uuid = (string) $draft->uuid;
+
+            // Close for the owner so their devices delete the local copy.
+            DraftClosure::close($userId, $uuid);
+            $draft->delete();
         }
 
         if (request()->expectsJson()) {
-            return response()->json(['status' => $draft->status]);
+            return response()->json(['status' => Draft::STATUS_DISCARDED]);
         }
 
         return redirect()->route('drafts.index')->with('success', 'تم تجاهل المسودة');
+    }
+
+    /**
+     * Admin: drop every pending draft of one user without writing it.
+     * This is a real delete, not a status change.
+     */
+    public function discardUser(User $user)
+    {
+        $userId = (int) $user->id;
+
+        $drafts = Draft::where('user_id', $userId)
+            ->pending()
+            ->get(['id', 'uuid']);
+
+        if ($drafts->isNotEmpty()) {
+            // Close first so a delayed browser sync cannot re-create them.
+            DraftClosure::closeMany(
+                $userId,
+                $drafts->pluck('uuid')->filter()->map(fn ($uuid) => (string) $uuid)->all()
+            );
+
+            Draft::whereKey($drafts->pluck('id'))->delete();
+        }
+
+        $deleted = $drafts->count();
+
+        if (request()->expectsJson()) {
+            return response()->json([
+                'status' => Draft::STATUS_DISCARDED,
+                'deleted' => $deleted,
+            ]);
+        }
+
+        return redirect()->route('drafts.index')->with(
+            'success',
+            "تم حذف {$deleted} مسودة للمستخدم {$user->name} نهائياً"
+        );
     }
 
     private function respond(Draft $draft, string $level, string $message)
@@ -223,7 +433,7 @@ class DraftController extends Controller
             return response()->json([
                 'status' => $level,
                 'message' => $message,
-                'draft_status' => $draft->fresh()->status,
+                'draft_status' => $draft->fresh()?->status ?? Draft::STATUS_FINALIZED,
             ], $level === 'success' ? 200 : 422);
         }
 

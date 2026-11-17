@@ -24,9 +24,15 @@ class User extends Authenticatable
 
     public function hasPermission(string $module): bool
     {
-        // Hardcoded admins Esraa (7777) and Reem (1010) have all permissions by default
-        if (in_array($this->employee_code, ['7777', '1010'])) {
-            return true;
+        // Esraa (7777) and Reem (1010) start with every permission enabled, but
+        // an explicit "off" row saved from the permissions screen must win so
+        // an admin can switch any module off for them like any other user.
+        if (in_array($this->employee_code, ['7777', '1010'], true)) {
+            $permission = $this->permissions()
+                ->where('module', $module)
+                ->first(['is_granted']);
+
+            return $permission ? (bool) $permission->is_granted : true;
         }
 
         return $this->permissions()

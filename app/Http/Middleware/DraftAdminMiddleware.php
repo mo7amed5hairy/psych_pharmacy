@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Draft recovery is restricted to the owner account (employee_code = 1001).
+ * Draft recovery is available to the owner account (employee_code = 1001)
+ * and to any user explicitly granted the "drafts" permission from the
+ * permissions screen.
  */
 class DraftAdminMiddleware
 {
@@ -15,7 +17,9 @@ class DraftAdminMiddleware
 
     public function handle(Request $request, Closure $next)
     {
-        if (Auth::check() && Auth::user()->employee_code === self::ADMIN_CODE) {
+        $user = Auth::user();
+
+        if ($user && ($user->employee_code === self::ADMIN_CODE || $user->hasPermission('drafts'))) {
             return $next($request);
         }
 

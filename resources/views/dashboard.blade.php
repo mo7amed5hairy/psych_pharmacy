@@ -5,7 +5,31 @@
 @section('page-subtitle', 'القائمة حسب العهدة (كود الموظف: ' . auth()->user()->employee_code . ')')
 
 @section('content')
-    {{-- كارت مراقبة المجدول/الترحيل التلقائي مخفي: الترحيل أصبح يدوياً بواسطة المستخدم. --}}
+    {{-- يظهر فقط عند تفعيل الترحيل التلقائي من صفحة المسودات. --}}
+    @if($stockAutoTransfer['enabled'])
+        <div class="mb-6">
+            <div class="card p-4 flex items-center justify-between bg-emerald-50 border-emerald-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500 text-white">
+                        <i class="fas fa-check-circle text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="font-extrabold text-sm text-emerald-900">
+                            الترحيل التلقائي لأرصدة الأدوية
+                        </div>
+                        <p class="text-xs text-emerald-700 mt-0.5">
+                            مفعل — التنفيذ القادم: {{ $stockAutoTransfer['nextDueLabel'] }}
+                            @if($stockAutoTransfer['lastRun'])
+                                &nbsp;|&nbsp; آخر ترحيل:
+                                {{ \Carbon\Carbon::parse($stockAutoTransfer['lastRun'])->diffForHumans() }}
+                            @endif
+                        </p>
+                    </div>
+                </div>
+                <span class="pill pill-green">مفعل</span>
+            </div>
+        </div>
+    @endif
 
     <!-- Stats -->
 

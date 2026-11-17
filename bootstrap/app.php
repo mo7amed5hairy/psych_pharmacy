@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Marks a draft as finalized right after its real controller saved the data.
         $middleware->web(append: [
             \App\Http\Middleware\FinalizeDraftAfterSave::class,
+            \App\Http\Middleware\RunAutomaticMaintenance::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

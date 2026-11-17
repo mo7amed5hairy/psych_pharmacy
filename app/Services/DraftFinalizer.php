@@ -7,6 +7,7 @@ use App\Models\Medicine;
 use App\Models\Stock;
 use App\Models\UnitType;
 use App\Models\User;
+use App\Support\DraftClosure;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -16,8 +17,8 @@ use Throwable;
  * Writes a stored draft into the real database tables.
  *
  * Used by the admin recovery screen only. Normal user submissions are
- * written by their own controllers (the draft is then marked finalized
- * without replaying it, so nothing is ever inserted twice).
+ * written by their own controllers (the draft row is then deleted without
+ * replaying it, so nothing is ever inserted twice).
  */
 class DraftFinalizer
 {
@@ -33,33 +34,30 @@ class DraftFinalizer
     public function finalize(Draft $draft, User $actor): string
     {
         if (!$draft->isPending()) {
-            return $draft->result ?: 'تم حفظ هذه المسودة مسبقاً';
+            return 'تم حفظ هذه المسودة مسبقاً';
         }
 
         try {
-            $message = DB::transaction(function () use ($draft, $actor) {
-                /** @var Draft $locked */
-                $locked = Draft::whereKey($draft->getKey())->lockForUpdate()->firstOrFail();
+            return DB::transaction(function () use ($draft, $actor) {
+                /** @var Draft|null $locked */
+                $locked = Draft::whereKey($draft->getKey())->lockForUpdate()->first();
 
-                if (!$locked->isPending()) {
-                    return $locked->result ?: 'تم حفظ هذه المسودة مسبقاً';
+                if (!$locked || !$locked->isPending()) {
+                    return 'تم حفظ هذه المسودة مسبقاً';
                 }
 
                 $message = $this->apply($locked, $locked->user, $locked->payload ?? []);
 
-                $locked->forceFill([
-                    'status' => Draft::STATUS_FINALIZED,
-                    'finalized_at' => now(),
-                    'finalized_by' => $actor->id,
-                    'result' => $message,
-                ])->save();
+                $userId = (int) $locked->user_id;
+                $uuid = (string) $locked->uuid;
+
+                // Close before deleting so a delayed sync from the browser can
+                // never insert this draft again.
+                DraftClosure::close($userId, $uuid);
+                $locked->delete();
 
                 return $message;
             });
-
-            $draft->refresh();
-
-            return $message;
         } catch (ValidationException $e) {
             $message = $e->validator->errors()->first();
             Draft::whereKey($draft->getKey())->update(['result' => 'فشل الحفظ: ' . $message]);

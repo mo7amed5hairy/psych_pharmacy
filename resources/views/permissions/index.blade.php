@@ -9,7 +9,9 @@
         <form action="{{ route('permissions.update') }}" method="POST">
             @csrf
             <div class="table-wrap overflow-x-auto">
-                <table class="data data-table cell-border">
+                {{-- Not .data-table: this table must keep every permission column
+                     visible, so DataTables responsive must not collapse them. --}}
+                <table id="permissionsTable" class="data cell-border">
                     <thead>
                         <tr>
                             <th class="bg-slate-50">المستخدم</th>
@@ -122,4 +124,31 @@
       transform: translateX(22px);
     }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    // Keep all permission columns (including "الجرد") visible as real columns.
+    // The global DataTables defaults enable responsive mode, which collapses
+    // the last columns behind an expand arrow; override it for this table only.
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!window.$ || !window.$.fn || !window.$.fn.DataTable) {
+            return;
+        }
+
+        var table = document.getElementById('permissionsTable');
+
+        if (!table || window.$.fn.DataTable.isDataTable(table)) {
+            return;
+        }
+
+        window.$(table).DataTable({
+            responsive: false,
+            paging: false,
+            searching: false,
+            info: false,
+            ordering: false
+        });
+    });
+</script>
 @endpush
