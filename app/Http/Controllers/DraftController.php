@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\User;
 use App\Services\DraftFinalizer;
 use App\Services\MaintenanceService;
+use App\Services\ProjectBackupService;
 use App\Support\DraftClosure;
 use App\Support\DraftErrorTranslator;
 use App\Support\DraftForm;
@@ -25,7 +26,8 @@ class DraftController extends Controller
 
     public function __construct(
         private DraftFinalizer $finalizer,
-        private MaintenanceService $maintenance
+        private MaintenanceService $maintenance,
+        private ProjectBackupService $backup
     ) {
     }
 
@@ -256,7 +258,9 @@ class DraftController extends Controller
             'lastTransferAt' => $this->maintenance->lastTransferAt(),
         ];
 
-        return view('drafts.index', compact('groups', 'summaries', 'forms', 'totalPending', 'usersCount', 'maintenance'));
+        $backupStatus = $this->backup->status();
+
+        return view('drafts.index', compact('groups', 'summaries', 'forms', 'totalPending', 'usersCount', 'maintenance', 'backupStatus'));
     }
 
     /**
@@ -306,6 +310,29 @@ class DraftController extends Controller
                 . $this->dueLabel($this->maintenance->nextTransferDue())
                 . ' (لا يتم تغيير أرصدة الشهر الحالي).'
         );
+    }
+
+    /**
+     * Admin: create a full backup of the project files and the database now.
+     */
+    public function backupNow()
+    {
+        if ($denied = $this->maintenanceAccessDenied()) {
+            return $denied;
+        }
+
+        $result = $this->backup->run();
+
+        if ($result['status'] === 'success') {
+            return back()->with(
+                'success',
+                'تم إنشاء النسخة الاحتياطية: ' . $result['file'] . ' — ' . $result['message']
+            );
+        }
+
+        return back()->withErrors([
+            'backup' => 'تعذر إنشاء النسخة الاحتياطية: ' . $result['message'],
+        ]);
     }
 
     /**

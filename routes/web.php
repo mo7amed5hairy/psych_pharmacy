@@ -72,6 +72,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/drafts', [DraftController::class, 'index'])->name('drafts.index');
         Route::post('/drafts/settings/purge', [DraftController::class, 'togglePurge'])->name('drafts.settings.purge');
         Route::post('/drafts/settings/transfer', [DraftController::class, 'toggleStockTransfer'])->name('drafts.settings.transfer');
+        Route::post('/drafts/settings/backup', [DraftController::class, 'backupNow'])->name('drafts.settings.backup');
         Route::post('/drafts/user/{user}/finalize', [DraftController::class, 'finalizeUser'])->name('drafts.finalize-user');
         Route::post('/drafts/user/{user}/discard', [DraftController::class, 'discardUser'])->name('drafts.discard-user');
         Route::post('/drafts/{draft}/finalize', [DraftController::class, 'finalize'])->name('drafts.finalize');

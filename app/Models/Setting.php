@@ -13,6 +13,13 @@ class Setting extends Model
     public const STOCK_TRANSFER_NEXT_DUE = 'stock_transfer_next_due';
     public const STOCK_TRANSFER_LAST_RUN = 'stock_transfer_last_run_at';
 
+    public const PROJECT_BACKUP_LAST_RUN = 'project_backup_last_run_at';
+    public const PROJECT_BACKUP_LAST_ATTEMPT = 'project_backup_last_attempt_at';
+    public const PROJECT_BACKUP_LAST_STATUS = 'project_backup_last_status';
+    public const PROJECT_BACKUP_LAST_FILE = 'project_backup_last_file';
+    public const PROJECT_BACKUP_LAST_SIZE = 'project_backup_last_size';
+    public const PROJECT_BACKUP_LAST_MESSAGE = 'project_backup_last_message';
+
     protected $fillable = [
         'key',
         'value',

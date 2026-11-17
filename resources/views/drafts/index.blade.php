@@ -124,6 +124,77 @@
                 </form>
             </div>
         </div>
+
+        {{-- Project + database backup --}}
+        @php
+            $backupOk = $backupStatus['lastStatus'] === 'success';
+            $backupFailed = $backupStatus['lastStatus'] === 'failed';
+        @endphp
+
+        <div class="mt-4 border rounded-xl p-4 {{ $backupOk ? 'bg-emerald-50 border-emerald-200' : ($backupFailed ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-200') }}">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <div class="font-bold text-slate-900">
+                        <i class="fas fa-database text-sky-600"></i>
+                        النسخ الاحتياطي للمشروع وقاعدة البيانات
+                    </div>
+                    <p class="text-xs text-slate-600 mt-2 leading-6">
+                        ينشئ ملف ZIP خارج مجلد المشروع يحتوي كل ملفات المشروع مع ملف <strong>database.sql</strong>،
+                        ويعمل تلقائياً عند أول استخدام يومي بعد الساعة <strong>{{ $backupStatus['runAfter'] }}</strong>،
+                        مع الاحتفاظ بآخر <strong>{{ $backupStatus['keepDays'] }} يوم</strong> فقط.
+                    </p>
+                </div>
+
+                <span class="pill {{ $backupOk ? 'pill-green' : ($backupFailed ? 'pill-rose' : 'pill-blue') }}">
+                    {{ $backupOk ? 'ناجح' : ($backupFailed ? 'فشل' : 'لم يعمل بعد') }}
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600 mt-3">
+                <div>
+                    آخر تشغيل:
+                    <strong>
+                        {{ $backupStatus['lastRunAt']
+                            ? \Carbon\Carbon::parse($backupStatus['lastRunAt'])->diffForHumans()
+                            : 'لم يُنفَّذ بعد' }}
+                    </strong>
+                </div>
+                <div>
+                    الملف:
+                    <strong>{{ $backupStatus['lastFile'] ?: '—' }}</strong>
+                    @if($backupStatus['lastSize'])
+                        ({{ $backupStatus['lastSize'] }})
+                    @endif
+                </div>
+                <div>
+                    مسار الحفظ:
+                    <strong dir="ltr">{{ $backupStatus['path'] }}</strong>
+                </div>
+                <div>
+                    نسخة خارجية:
+                    <strong dir="ltr">{{ $backupStatus['externalPath'] ?: 'غير مضبوطة' }}</strong>
+                </div>
+            </div>
+
+            @if($backupFailed && $backupStatus['lastMessage'])
+                <div class="text-xs text-rose-700 mt-2">
+                    سبب الفشل: {{ $backupStatus['lastMessage'] }}
+                </div>
+            @endif
+
+            @if($backupStatus['enabled'])
+                <form method="POST" action="{{ route('drafts.settings.backup') }}" class="mt-3"
+                    onsubmit="return confirm('سيتم إنشاء نسخة احتياطية كاملة الآن وقد تستغرق بعض الثواني. متابعة؟')">
+                    @csrf
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download"></i>
+                        نسخة احتياطية الآن
+                    </button>
+                </form>
+            @else
+                <div class="text-xs text-slate-500 mt-3">النسخ التلقائي متوقف من إعدادات التطبيق.</div>
+            @endif
+        </div>
     </div>
     @endif
 
