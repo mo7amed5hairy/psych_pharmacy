@@ -36,6 +36,7 @@
     @endif
 
     <!-- View Filter -->
+    <div class="card p-5 bg-sky-50 border-sky-100 sky-blue">
         <form method="GET" action="{{ route('stock.index') }}" class="flex items-end gap-3 flex-wrap">
             <div>
                 <label class="label text-sky-800">عرض أرصدة شهر</label>
@@ -53,7 +54,7 @@
             </div>
         </form>
     </div>
-
+    </div>
     <!-- Add Stock Form -->
     <div class="card p-5 mb-5">
         <div class="mb-4 text-slate-700 font-bold border-b pb-2">إضافة / تعديل رصيد صنف</div>
@@ -117,7 +118,8 @@
                                 {{ $remaining }}
                             </td>
                             <td>
-                                <button onclick="editStock({{ $item->id }}, {{ $item->quantity }}, {{ $item->dispensed }})" class="btn btn-ghost">
+                                <button onclick="editStock({{ $item->id }}, {{ $item->quantity }}, {{ $item->dispensed }})"
+                                    class="btn btn-ghost">
                                     <i class="fas fa-edit"></i>
                                 </button>
                             </td>
@@ -141,9 +143,11 @@
                 @method('PUT')
                 <input type="hidden" name="stock_id" id="editStockId">
                 <label class="label">رصيد أول الشهر</label>
-                <input type="number" name="quantity" id="editStockOpening" class="input mb-3" min="0" oninput="calcRemaining()">
+                <input type="number" name="quantity" id="editStockOpening" class="input mb-3" min="0"
+                    oninput="calcRemaining()">
                 <label class="label">المنصرف</label>
-                <input type="number" name="dispensed" id="editStockDispensed" class="input mb-3" min="0" readonly style="background:#f1f5f9;">
+                <input type="number" name="dispensed" id="editStockDispensed" class="input mb-3" min="0" readonly
+                    style="background:#f1f5f9;">
                 <label class="label">المتبقى</label>
                 <input type="number" id="editStockQuantity" class="input mb-4" min="0" readonly style="background:#f1f5f9;">
                 <div class="flex gap-2">
@@ -179,18 +183,18 @@
                         medicineResults.innerHTML = '';
                         if (data.length === 0) {
                             medicineResults.innerHTML = `
-                                                                            <div class="smart-search-item text-slate-500">
-                                                                                <i class="fas fa-plus-circle ml-1"></i> "${query}" - اضغط Enter لإضافة دواء جديد
-                                                                            </div>
-                                                                        `;
+                                                                                    <div class="smart-search-item text-slate-500">
+                                                                                        <i class="fas fa-plus-circle ml-1"></i> "${query}" - اضغط Enter لإضافة دواء جديد
+                                                                                    </div>
+                                                                                `;
                         } else {
                             data.forEach(med => {
                                 const div = document.createElement('div');
                                 div.className = 'smart-search-item';
                                 div.innerHTML = `
-                                                                                <div class="font-semibold">${med.name}</div>
-                                                                                <div class="text-xs text-slate-500">${med.unit_type?.name || ''} - سعر: ${med.price_hotline}</div>
-                                                                            `;
+                                                                                        <div class="font-semibold">${med.name}</div>
+                                                                                        <div class="text-xs text-slate-500">${med.unit_type?.name || ''} - سعر: ${med.price_hotline}</div>
+                                                                                    `;
                                 div.onclick = () => selectMedicine(med);
                                 medicineResults.appendChild(div);
                             });
